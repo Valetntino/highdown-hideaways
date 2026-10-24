@@ -1,3 +1,19 @@
+// Phone menu: one tap opens the section list, a tap on a link (or outside, or Escape) closes it.
+// The phone booking bar steps aside while the booking form itself is on screen, so it never covers the form.
+(function () {
+  var top = document.querySelector('.top'), btn = document.querySelector('.menu-btn');
+  if (top && btn) {
+    function set(open) { top.classList.toggle('open', open); btn.setAttribute('aria-expanded', open ? 'true' : 'false'); }
+    btn.addEventListener('click', function () { set(!top.classList.contains('open')); });
+    top.querySelectorAll('nav a').forEach(function (a) { a.addEventListener('click', function () { set(false); }); });
+    document.addEventListener('click', function (ev) { if (!top.contains(ev.target)) set(false); });
+    document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') set(false); });
+  }
+  var bar = document.querySelector('.mbar'), book = document.getElementById('book');
+  if (bar && book && 'IntersectionObserver' in window) {
+    new IntersectionObserver(function (es) { bar.classList.toggle('away', es[0].isIntersecting); }).observe(book);
+  }
+})();
 // Date helpers for the Airbnb hand-off. The form works without this file; this only stops impossible dates,
 // shows dates in words ('Fri 13 Nov') over the native input, and leaves empty fields out of the Airbnb link.
 (function () {

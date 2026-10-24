@@ -17,19 +17,19 @@ A private lodge for 6 with its own hot tub. Rated 5.0 from 331 reviews on Airbnb
 
 ## Questions answered
 
+- **What is provided?** Bedding, towels, bathrobes, beach towels, toiletries, Wi-Fi, a full kitchen with coffee pods, and a welcome hamper with eggs from our hens and produce in season.
+- **Is there parking?** Yes, free: 2 cars at the lodge, with more space on the nursery.
+- **Is there Wi-Fi and TV?** Fast Wi-Fi throughout. A 50-inch smart TV in the lounge (Netflix, Disney+, Prime Video) and a 40-inch smart TV in every bedroom.
+- **Is it step-free?** Inside is all on one level, with a large wet room and widened doorways. There are 2 steps to the front door; we put a ramp down on request.
+- **Is there air conditioning?** Not yet. Fans are provided for hot nights.
+- **How do we get there without a car?** Goring-by-Sea station is 1.5 miles away (about 28 minutes on foot); Angmering station is 1.9 miles.
 - **How many people does it sleep?** Up to 6, in two king-size bedrooms and a twin room. A travel cot and highchair are free on request.
 - **Is the hot tub private? Does it cost extra?** It is private to the lodge, under its own covered gazebo in your garden, and included in the price. You can use it in the rain.
 - **Check-in and check-out?** Check-in from 3pm, check-out by 10am. Self check-in with a lockbox. Ask us if you need other times.
 - **Can we bring a dog?** No pets. Ask us about assistance animals before booking.
 - **How far is the beach?** 5 to 8 minutes by car, or 25 to 35 minutes on foot along the Ferring Rife.
-- **Is it step-free?** Inside is all on one level, with a large wet room and widened doorways. There are 2 steps to the front door; we put a ramp down on request.
-- **Is there parking?** Yes, free: 2 cars at the lodge, with more space on the nursery.
 - **How do we book?** Choose dates and book on Airbnb, or book direct with us: ring or text 07940 796860, or email info@highdownhideaways.com.
-- **What is provided?** Bedding, towels, bathrobes, beach towels, toiletries, Wi-Fi, a full kitchen with coffee pods, and a welcome hamper with eggs from our hens and produce in season.
-- **Is there Wi-Fi and TV?** Fast Wi-Fi throughout. A 50-inch smart TV in the lounge (Netflix, Disney+, Prime Video) and a 40-inch smart TV in every bedroom.
-- **Is there air conditioning?** Not yet. Fans are provided for hot nights.
 - **Parties or smoking?** No parties, events or smoking.
-- **How do we get there without a car?** Goring-by-Sea station is 1.5 miles away (about 28 minutes on foot); Angmering station is 1.9 miles.
 
 ## Rooms
 
@@ -61,8 +61,8 @@ A private lodge for 6 with its own hot tub. Rated 5.0 from 331 reviews on Airbnb
 | Worthing pier and town | - | 15 min |
 | Littlehampton seafront | - | 15 min |
 | Arundel Castle | - | 20 min |
-| Brighton | - | 40 min |
 | Chichester | - | 35 min |
+| Brighton | - | 40 min |
 | Goodwood | - | 45 min |
 | Gatwick Airport | - | 1 hour |
 
@@ -75,4 +75,4 @@ Foschini Nursery, Hangleton Lane, Ferring, West Sussex BN12 6PP
 - index.html: the full page with photos
 - index.json: these facts as exact records
 
-Facts checked 26 September 2026. Built 24 Oct 2026 01:50 BST.
+Facts checked 26 September 2026. Built 24 Oct 2026 02:03 BST.

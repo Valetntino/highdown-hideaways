@@ -34,8 +34,32 @@
   "airbnb_reviews_at": "23 October 2026"
  },
  "facts_checked": "26 September 2026",
- "built": "2026-10-24T01:50:52.374987+01:00",
+ "built": "2026-10-24T02:03:45.306085+01:00",
  "answers": [
+  {
+   "q": "What is provided?",
+   "a": "Bedding, towels, bathrobes, beach towels, toiletries, Wi-Fi, a full kitchen with coffee pods, and a welcome hamper with eggs from our hens and produce in season."
+  },
+  {
+   "q": "Is there parking?",
+   "a": "Yes, free: 2 cars at the lodge, with more space on the nursery."
+  },
+  {
+   "q": "Is there Wi-Fi and TV?",
+   "a": "Fast Wi-Fi throughout. A 50-inch smart TV in the lounge (Netflix, Disney+, Prime Video) and a 40-inch smart TV in every bedroom."
+  },
+  {
+   "q": "Is it step-free?",
+   "a": "Inside is all on one level, with a large wet room and widened doorways. There are 2 steps to the front door; we put a ramp down on request."
+  },
+  {
+   "q": "Is there air conditioning?",
+   "a": "Not yet. Fans are provided for hot nights."
+  },
+  {
+   "q": "How do we get there without a car?",
+   "a": "Goring-by-Sea station is 1.5 miles away (about 28 minutes on foot); Angmering station is 1.9 miles."
+  },
   {
    "q": "How many people does it sleep?",
    "a": "Up to 6, in two king-size bedrooms and a twin room. A travel cot and highchair are free on request."
@@ -57,36 +81,12 @@
    "a": "5 to 8 minutes by car, or 25 to 35 minutes on foot along the Ferring Rife."
   },
   {
-   "q": "Is it step-free?",
-   "a": "Inside is all on one level, with a large wet room and widened doorways. There are 2 steps to the front door; we put a ramp down on request."
-  },
-  {
-   "q": "Is there parking?",
-   "a": "Yes, free: 2 cars at the lodge, with more space on the nursery."
-  },
-  {
    "q": "How do we book?",
    "a": "Choose dates and book on Airbnb, or book direct with us: ring or text 07940 796860, or email info@highdownhideaways.com."
   },
   {
-   "q": "What is provided?",
-   "a": "Bedding, towels, bathrobes, beach towels, toiletries, Wi-Fi, a full kitchen with coffee pods, and a welcome hamper with eggs from our hens and produce in season."
-  },
-  {
-   "q": "Is there Wi-Fi and TV?",
-   "a": "Fast Wi-Fi throughout. A 50-inch smart TV in the lounge (Netflix, Disney+, Prime Video) and a 40-inch smart TV in every bedroom."
-  },
-  {
-   "q": "Is there air conditioning?",
-   "a": "Not yet. Fans are provided for hot nights."
-  },
-  {
    "q": "Parties or smoking?",
    "a": "No parties, events or smoking."
-  },
-  {
-   "q": "How do we get there without a car?",
-   "a": "Goring-by-Sea station is 1.5 miles away (about 28 minutes on foot); Angmering station is 1.9 miles."
   }
  ],
  "rooms": [
@@ -168,14 +168,14 @@
    "drive": "20 min"
   },
   {
-   "place": "Brighton",
-   "walk": "",
-   "drive": "40 min"
-  },
-  {
    "place": "Chichester",
    "walk": "",
    "drive": "35 min"
+  },
+  {
+   "place": "Brighton",
+   "walk": "",
+   "drive": "40 min"
   },
   {
    "place": "Goodwood",
