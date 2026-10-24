@@ -53,3 +53,22 @@
     setTimeout(function () { ci.disabled = false; co.disabled = false; }, 0);
   });
 })();
+// Direct price: the "ask us for a price for your dates" email carries the dates and party typed in the booking bar,
+// so a guest who prefers to book direct does not have to type them again (research/growth-v1, 24 Oct 2026).
+(function () {
+  var ask = document.getElementById('ask'), ci = document.getElementById('ci'), co = document.getElementById('co'),
+      ad = document.getElementById('ad');
+  if (!ask || !ci || !co || !ad) return;
+  var base = ask.getAttribute('href').split('?')[0];
+  function words(v) {
+    if (!v) return 'not chosen yet';
+    var p = v.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  function update() {
+    var body = 'Hello Luca and Trina,\n\nPlease could you give us a direct price for Elderflower Lodge.\n\nArrive: ' + words(ci.value) +
+      '\nLeave: ' + words(co.value) + '\nGuests: ' + ad.value + '\n\nThank you,\n';
+    ask.setAttribute('href', base + '?subject=' + encodeURIComponent('Elderflower Lodge: a direct price') + '&body=' + encodeURIComponent(body));
+  }
+  [ci, co, ad].forEach(function (el) { el.addEventListener('change', update); el.addEventListener('input', update); });
+  update();
+})();

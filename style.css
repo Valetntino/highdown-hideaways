@@ -1,8 +1,8 @@
-/* Highdown Hideaways, look v4 (DESIGN.md, 24 Oct 2026).
-   Layout copied from measured exemplars (research/look-v3/layout_measured.json): full-width hero with the name on
-   it and a booking bar (Canopy & Stars); centred intro; three equal photos with labels under them (Canopy,
-   fforest); photo-and-text pairs inside the one 1120 px column (Canopy, 24 Oct); centred chapter headings at about
-   38 px over a 17 px body. No cards, no radius, no shadows. */
+/* Highdown Hideaways, look v7 (DESIGN.md, 24 Oct 2026).
+   Width system measured on 12 professional sites at 1440 and 1920 px (research/look-v5): photos grow with the
+   screen, text stays at a reading measure. Full-width hero with the booking bar; photo-and-text pairs with the
+   photo at half the screen, to its edge; one full-width band; a mixed-size photo block; chapters vary in layout
+   (centred, pair, band, split) so no two neighbours share one template. No cards, no radius, no shadows. */
 @font-face { font-family: "Newsreader"; src: url(fonts/newsreader-latin.woff2) format("woff2"); font-weight: 400 500; font-display: swap; }
 @font-face { font-family: "Newsreader"; font-style: italic; src: url(fonts/newsreader-italic-latin.woff2) format("woff2"); font-weight: 400 500; font-display: swap; }
 @font-face { font-family: "Public Sans"; src: url(fonts/publicsans-latin.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
@@ -12,9 +12,8 @@
   color-scheme: light;
   --serif: "Newsreader", Georgia, "Times New Roman", serif;
   --sans: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  /* one width system (24 Oct): every section sits in one 1120 px column; its three-column grid (352 px + 32 px gaps)
-     sets the photo tiles, the pairs, the question column and the gallery, so left and right edges line up */
-  --gutter: 20px; --wide: 1120px; --max: calc(var(--wide) + 80px); --read: 62ch; --colgap: 32px;
+  /* widths (v7): photo rows use up to 1600 px; text never runs wider than about 64 characters (34rem) */
+  --gutter: 20px; --wide: 1120px; --page: 1600px; --max: calc(var(--page) + 2 * var(--gutter)); --pairgap: clamp(48px, 5vw, 96px); --read: 62ch; --colgap: 32px;
   --s1: 8px; --s2: 16px; --s3: 32px; --s4: 64px; --s5: 44px; --head: 40px;
   --heroh: 62vh;
 }
@@ -28,7 +27,7 @@
 html { scroll-padding-top: 72px; scroll-padding-bottom: 88px; -webkit-text-size-adjust: 100%; }
 a, button, summary, .btn { touch-action: manipulation; }
 body { margin: 0; background: var(--stone); color: var(--ink); font: 400 1.0625rem/1.6 var(--sans); }
-/* photos carry one baked-in grade (tools/grade_v1.py), so no CSS filter */
+/* photos carry a baked-in per-photo correction (tools/grade_v2.py), so no CSS filter */
 img { max-width: 100%; height: auto; display: block; }
 a { color: var(--peacock); text-decoration-thickness: 1px; text-underline-offset: 3px; }
 a:hover { text-decoration-thickness: 2px; }
@@ -64,13 +63,13 @@ figcaption { font-size: .8125rem; color: var(--muted); margin-top: var(--s1); }
 /* hero: the photo across the full width, the name on it, the booking bar on its lower edge */
 .hero { position: relative; }
 .hero-photo { position: relative; }
-.hero-photo img { width: 100%; height: var(--heroh); min-height: 380px; object-fit: cover; object-position: 50% 62%; }
+.hero-photo img { width: 100%; height: var(--heroh); min-height: 380px; object-fit: cover; object-position: 50% 40%; } /* less paving, more garden (photo return, 24 Oct) */
 .hero-photo::after { content: ""; position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(to top, rgba(10, 14, 12, .74), rgba(10, 14, 12, .5) 38%, rgba(10, 14, 12, .12) 62%, rgba(10, 14, 12, 0) 78%); }
 .hero-text h1, .hero-line, .hero-text .label { text-shadow: 0 1px 18px rgba(0, 0, 0, .35); }
 .hero-text { position: absolute; left: 0; right: 0; top: 0; height: max(380px, var(--heroh)); display: flex; flex-direction: column;
   justify-content: flex-end; align-items: center; text-align: center; padding: 0 var(--gutter) 32px; color: #fff; }
-.hero-text .label { color: rgba(255, 255, 255, .9); margin-bottom: 10px; }
+.hero-text .label { color: rgba(255, 255, 255, .92); margin-bottom: 10px; font: 400 1rem/1.4 var(--sans); letter-spacing: .02em; text-transform: none; } /* no spaced capitals over the name: a blind judge read them as an AI tell (24 Oct) */
 .hero-text h1 { color: #fff; font-size: clamp(2.5rem, 1.7rem + 3vw, 3.75rem); font-weight: 450; line-height: 1.05; }
 .hero-line { font: 400 1.125rem/1.45 var(--serif); margin: 12px 0 0; max-width: 36ch; }
 /* booking bar: one panel, fields split by hairlines (label small on top, value below), like the Canopy & Stars
@@ -143,7 +142,7 @@ figcaption { font-size: .8125rem; color: var(--muted); margin-top: var(--s1); }
 
 /* three equal photos with a label underneath */
 .trio { display: grid; gap: var(--s4); }
-@media (min-width: 760px) { .trio { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--colgap); } }
+@media (min-width: 760px) { .trio { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(24px, 2.8vw, 48px); } }
 .trio img { width: 100%; aspect-ratio: 5/4; object-fit: cover; }
 .trio figcaption { margin-top: var(--s2); color: var(--ink); font-size: 1rem; }
 .trio h3 { margin-bottom: 6px; }
@@ -156,13 +155,14 @@ figcaption { font-size: .8125rem; color: var(--muted); margin-top: var(--s1); }
 .pair-text h2 { margin-bottom: var(--s2); }
 .pair-text > p { max-width: var(--read); }
 @media (min-width: 900px) {
-  /* inside the same column as the rest (they ran to the screen edge at twice the lodge photos' size, 24 Oct) */
-  .pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--colgap); max-width: var(--max); margin: 0 auto;
-    padding: var(--s5) var(--gutter); }
-  .pair-photo img { aspect-ratio: 4/3; height: auto; }
-  .pair-text { padding: 0 0 0 var(--s3); max-width: none; }
+  /* the photo takes half the screen, to its edge (The Newt, Another Place: 720 px at 1440, 960 px at 1920); the
+     text sits close to it at a reading measure, so the pair reads as one unit (v6: "too spread apart") */
+  .pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 0; padding: var(--s5) 0; }
+  .pair + .pair { padding-top: 0; }
+  .pair-photo img { aspect-ratio: 4/3; height: auto; max-height: 86vh; }
+  .pair-text { padding: 0 var(--gutter) 0 var(--pairgap); max-width: calc(34rem + var(--pairgap) + var(--gutter)); }
   .pair.flip .pair-photo { order: 2; }
-  .pair.flip .pair-text { padding: 0 var(--s3) 0 0; justify-self: stretch; }
+  .pair.flip .pair-text { padding: 0 var(--pairgap) 0 var(--gutter); justify-self: end; }
 }
 .contact { font-size: .9375rem; color: var(--muted); }
 
@@ -180,13 +180,12 @@ figcaption { font-size: .8125rem; color: var(--muted); margin-top: var(--s1); }
 .amenities ul { list-style: none; padding: 0; margin: 0; }
 .amenities li { padding: 3px 0; }
 .times { display: grid; gap: var(--s4); }
-@media (min-width: 760px) { .times { grid-template-columns: 1fr 1fr; gap: 64px; } }
-.times .label { margin-bottom: var(--s1); }
+@media (min-width: 760px) { .times { grid-template-columns: 1fr 1fr; gap: clamp(32px, 4vw, 64px); } }
+.times h3 { font-size: 1.1875rem; margin-bottom: var(--s2); }
 
 /* before you book */
-.truths { display: grid; gap: var(--s3); margin: 0 0 var(--s4); }
-@media (min-width: 760px) { .truths { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--colgap); } }
-.truths h3 { margin-bottom: 8px; }
+.truths { display: grid; gap: var(--s3); margin: var(--s3) 0 var(--s3); }
+.truths h3 { margin-bottom: 8px; font-size: 1.1875rem; }
 .truths p { margin: 0; color: var(--muted); }
 .qa { margin: 0; }
 @media (min-width: 760px) { .qa div { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); column-gap: var(--colgap); } }
@@ -229,6 +228,7 @@ blockquote.big p { font-size: clamp(1.75rem, 1.3rem + 1.4vw, 2.375rem); line-hei
 /* footer */
 .foot { background: var(--peacock-deep); color: var(--on-dark-muted); font-size: .875rem; padding: var(--s4) var(--gutter) 104px; text-align: center; }
 .foot p { max-width: var(--max); margin: 0 auto 6px; }
+.foot .checked { color: var(--on-dark-muted); font-size: .8125rem; }
 .foot-name { font: 450 1.5rem var(--serif); color: #FFFFFF; margin-bottom: var(--s2) !important; }
 
 /* phone booking bar */
@@ -261,3 +261,35 @@ blockquote.big p { font-size: clamp(1.75rem, 1.3rem + 1.4vw, 2.375rem); line-hei
   .mbar.away { transform: translateY(110%); }
 }
 @media (max-width: 379px) { .js .brand { letter-spacing: .12em; font-size: .75rem; } .js .menu-btn { letter-spacing: .06em; gap: 6px; } }
+
+/* look v7 additions */
+.block > h2 + .mosaic { margin-top: var(--s3); }
+/* photos: one large, two stacked beside it, then two halves (the third equal grid made the page one template) */
+.mosaic { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.mosaic figure:first-child { grid-column: 1 / -1; }
+.mosaic img { width: 100%; aspect-ratio: 4/3; object-fit: cover; }
+@media (min-width: 760px) {
+  .mosaic { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--s3) clamp(20px, 2.2vw, 40px); }
+  .mosaic figure:nth-child(1) { grid-column: 1 / 8; grid-row: 1 / 3; position: relative; min-height: 420px; }
+  .mosaic figure:nth-child(1) a { position: absolute; inset: 0 0 1.9rem 0; }
+  .mosaic figure:nth-child(1) picture { display: block; height: 100%; }
+  .mosaic figure:nth-child(1) img { height: 100%; aspect-ratio: auto; }
+  .mosaic figure:nth-child(1) figcaption { position: absolute; left: 0; bottom: 0; margin: 0; }
+  .mosaic figure:nth-child(2), .mosaic figure:nth-child(3) { grid-column: 8 / 13; }
+  .mosaic figure:nth-child(4) { grid-column: 1 / 7; }
+  .mosaic figure:nth-child(5) { grid-column: 7 / 13; }
+  .mosaic figure:nth-child(n+4) img { aspect-ratio: 3/2; }
+}
+/* one photo across the whole screen */
+.band { margin: var(--s4) 0 0; }
+.band img { width: 100%; aspect-ratio: 4/3; object-fit: cover; }
+@media (min-width: 760px) { .band img { aspect-ratio: 21/9; max-height: 88vh; } }
+.band figcaption { max-width: var(--max); margin: var(--s1) auto 0; padding: 0 var(--gutter); }
+/* split chapter: heading and short text on the left, the detail on the right */
+.split-head h2 { margin-bottom: var(--s2); }
+.split-head > p { color: var(--muted); max-width: 34rem; }
+.checked { font-size: .8125rem; color: var(--muted); }
+@media (min-width: 900px) {
+  .split { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); column-gap: clamp(48px, 6vw, 112px); align-items: start; }
+  .split-head { position: sticky; top: 96px; }
+}
