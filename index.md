@@ -35,9 +35,9 @@ A private lodge for 6 with its own hot tub. Rated 5.0 from 331 reviews on Airbnb
 
 | Room | Beds or fittings | Notes |
 |---|---|---|
-| Bedroom 1 | King-size bed | Own en-suite wet room |
-| Bedroom 2 | King-size bed | Shares the main bathroom |
-| Bedroom 3 | Two single beds (can be joined on request) | Shares the main bathroom |
+| Bedroom 1 | King-size bed | En-suite wet room |
+| Bedroom 2 | King-size bed | - |
+| Bedroom 3 | Two single beds, joined on request | - |
 | Main bathroom | Bath and rainfall shower | For bedrooms 2 and 3 |
 | Open-plan living | Kitchen, dining for 6 and lounge under skylights | Utility room with washer and dryer |
 
@@ -75,4 +75,4 @@ Foschini Nursery, Hangleton Lane, Ferring, West Sussex BN12 6PP
 - index.html: the full page with photos
 - index.json: these facts as exact records
 
-Facts checked 26 September 2026. Built 24 Oct 2026 02:03 BST.
+Facts checked 26 September 2026. Built 24 Oct 2026 02:28 BST.

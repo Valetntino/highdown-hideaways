@@ -1,23 +1,25 @@
 /* Highdown Hideaways, look v4 (DESIGN.md, 24 Oct 2026).
    Layout copied from measured exemplars (research/look-v3/layout_measured.json): full-width hero with the name on
    it and a booking bar (Canopy & Stars); centred intro; three equal photos with labels under them (Canopy,
-   fforest); photo-and-text pairs with the photo to the page edge (The Tawny); centred chapter headings at about
+   fforest); photo-and-text pairs inside the one 1120 px column (Canopy, 24 Oct); centred chapter headings at about
    38 px over a 17 px body. No cards, no radius, no shadows. */
 @font-face { font-family: "Newsreader"; src: url(fonts/newsreader-latin.woff2) format("woff2"); font-weight: 400 500; font-display: swap; }
 @font-face { font-family: "Newsreader"; font-style: italic; src: url(fonts/newsreader-italic-latin.woff2) format("woff2"); font-weight: 400 500; font-display: swap; }
 @font-face { font-family: "Public Sans"; src: url(fonts/publicsans-latin.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
 
 :root {
-  --stone: #F3F0EA; --tint: #E9E4DB; --ink: #1B1F1C; --muted: #5E625D; --rule: #D6D0C6; --peacock: #0E4D5C;
+  --stone: #F3F0EA; --tint: #E9E4DB; --ink: #1B1F1C; --muted: #5E625D; --rule: #D6D0C6; --peacock: #0E4D5C; --peacock-deep: #0B3E4A; --on-dark: #F3F0EA; --on-dark-muted: #C9D8D9;
   color-scheme: light;
   --serif: "Newsreader", Georgia, "Times New Roman", serif;
   --sans: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --gutter: 20px; --max: 1200px; --read: 62ch;
-  --s1: 8px; --s2: 16px; --s3: 32px; --s4: 64px; --s5: 44px;
+  /* one width system (24 Oct): every section sits in one 1120 px column; its three-column grid (352 px + 32 px gaps)
+     sets the photo tiles, the pairs, the question column and the gallery, so left and right edges line up */
+  --gutter: 20px; --wide: 1120px; --max: calc(var(--wide) + 80px); --read: 62ch; --colgap: 32px;
+  --s1: 8px; --s2: 16px; --s3: 32px; --s4: 64px; --s5: 44px; --head: 40px;
   --heroh: 62vh;
 }
 @media (min-width: 760px) { :root { --gutter: 40px; } }
-@media (min-width: 900px) { :root { --s5: 56px; } }
+@media (min-width: 900px) { :root { --s5: 56px; --head: 48px; } }
 @media (min-width: 900px) { :root { --heroh: max(520px, calc(100vh - 150px)); } }
 @media (min-width: 900px) and (min-height: 870px) { :root { --heroh: 720px; } }
 
@@ -26,7 +28,8 @@
 html { scroll-padding-top: 72px; scroll-padding-bottom: 88px; -webkit-text-size-adjust: 100%; }
 a, button, summary, .btn { touch-action: manipulation; }
 body { margin: 0; background: var(--stone); color: var(--ink); font: 400 1.0625rem/1.6 var(--sans); }
-img { max-width: 100%; height: auto; display: block; filter: saturate(.86); }
+/* photos carry one baked-in grade (tools/grade_v1.py), so no CSS filter */
+img { max-width: 100%; height: auto; display: block; }
 a { color: var(--peacock); text-decoration-thickness: 1px; text-underline-offset: 3px; }
 a:hover { text-decoration-thickness: 2px; }
 h1, h2, h3 { font-family: var(--serif); font-weight: 450; line-height: 1.15; letter-spacing: 0; color: var(--ink); text-wrap: balance; margin: 0; }
@@ -40,7 +43,8 @@ p, li, dd { text-wrap: pretty; }
 figure { margin: 0; }
 figcaption { font-size: .8125rem; color: var(--muted); margin-top: var(--s1); }
 .centre { text-align: center; }
-.sub { text-align: center; color: var(--muted); font-size: .9375rem; max-width: 60ch; margin: var(--s2) auto var(--s3); }
+.sub { text-align: center; color: var(--muted); font-size: .9375rem; max-width: 60ch; margin: var(--s2) auto var(--head); }
+.sub { text-wrap: balance; }
 .sub b { color: var(--ink); font-weight: 600; }
 
 /* header */
@@ -50,11 +54,11 @@ figcaption { font-size: .8125rem; color: var(--muted); margin-top: var(--s1); }
 .top nav { display: flex; gap: 28px; flex: 1; justify-content: center; overflow-x: auto; scrollbar-width: none; }
 .top nav a { font-size: .875rem; color: var(--ink); text-decoration: none; white-space: nowrap; padding: 4px 0; }
 .top nav a:hover { text-decoration: underline; }
-.btn { display: inline-block; background: var(--ink); color: var(--stone); border: 1px solid var(--ink); border-radius: 0;
+.btn { display: inline-block; background: var(--peacock); color: #FFFFFF; border: 1px solid var(--peacock); border-radius: 0;
   padding: 15px 26px; font: 600 .8125rem/1.2 var(--sans); letter-spacing: .12em; text-transform: uppercase;
   text-decoration: none; cursor: pointer; text-align: center; }
-.btn:hover { background: #000; }
-.btn.line { background: transparent; color: var(--ink); padding: 10px 18px; }
+.btn:hover { background: var(--peacock-deep); border-color: var(--peacock-deep); }
+.btn.line { background: transparent; color: var(--ink); border-color: var(--ink); padding: 10px 18px; }
 .btn.line:hover { background: var(--ink); color: var(--stone); }
 
 /* hero: the photo across the full width, the name on it, the booking bar on its lower edge */
@@ -105,8 +109,8 @@ figcaption { font-size: .8125rem; color: var(--muted); margin-top: var(--s1); }
 }
 
 /* intro: centred, short */
-.intro { max-width: 900px; margin: 0 auto; padding: var(--s4) var(--gutter); text-align: center; }
-@media (min-width: 900px) { .intro { padding-top: 72px; } }
+.intro { max-width: calc(920px + 2 * var(--gutter)); margin: 0 auto; padding: var(--s4) var(--gutter); text-align: center; }
+@media (min-width: 900px) { .intro { padding-top: 72px; padding-bottom: var(--s5); } }
 .lede { font: 400 clamp(1.25rem, 1.1rem + .5vw, 1.5rem)/1.5 var(--serif); margin: 0 auto var(--s2); max-width: 40ch; }
 /* rating: the score large, stars and count beside it, badges after a hairline */
 .rating { display: flex; align-items: center; justify-content: center; gap: 16px; margin: var(--s3) auto var(--s4); text-align: left; }
@@ -129,13 +133,17 @@ figcaption { font-size: .8125rem; color: var(--muted); margin-top: var(--s1); }
 
 /* a centred chapter */
 .block { max-width: var(--max); margin: 0 auto; padding: var(--s5) var(--gutter); }
-.block > h2 + .trio { margin-top: var(--s4); }
-.tint { max-width: none; background: var(--tint); }
-.tint > * { max-width: 980px; margin-left: auto; margin-right: auto; }
+.block > h2 + .trio { margin-top: var(--head); }
+/* the reviews band is the page's one dark break: peacock, the colour already in the bedroom, sofas and chairs */
+.tint { max-width: none; background: var(--peacock); color: var(--on-dark-muted); }
+.tint h2, .tint blockquote p, .tint .sub b { color: var(--on-dark); }
+.tint .sub, .tint blockquote footer { color: var(--on-dark-muted); }
+.tint a { color: #FFFFFF; }
+.tint > * { max-width: var(--wide); margin-left: auto; margin-right: auto; }
 
 /* three equal photos with a label underneath */
 .trio { display: grid; gap: var(--s4); }
-@media (min-width: 760px) { .trio { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; } }
+@media (min-width: 760px) { .trio { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--colgap); } }
 .trio img { width: 100%; aspect-ratio: 5/4; object-fit: cover; }
 .trio figcaption { margin-top: var(--s2); color: var(--ink); font-size: 1rem; }
 .trio h3 { margin-bottom: 6px; }
@@ -148,11 +156,13 @@ figcaption { font-size: .8125rem; color: var(--muted); margin-top: var(--s1); }
 .pair-text h2 { margin-bottom: var(--s2); }
 .pair-text > p { max-width: var(--read); }
 @media (min-width: 900px) {
-  .pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 72px; margin: 0 0 var(--s5); }
-  .pair-photo img { aspect-ratio: auto; height: 520px; }
-  .pair-text { padding: 0 var(--gutter) 0 0; max-width: 540px; }
+  /* inside the same column as the rest (they ran to the screen edge at twice the lodge photos' size, 24 Oct) */
+  .pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--colgap); max-width: var(--max); margin: 0 auto;
+    padding: var(--s5) var(--gutter); }
+  .pair-photo img { aspect-ratio: 4/3; height: auto; }
+  .pair-text { padding: 0 0 0 var(--s3); max-width: none; }
   .pair.flip .pair-photo { order: 2; }
-  .pair.flip .pair-text { padding: 0 0 0 var(--gutter); justify-self: end; }
+  .pair.flip .pair-text { padding: 0 var(--s3) 0 0; justify-self: stretch; }
 }
 .contact { font-size: .9375rem; color: var(--muted); }
 
@@ -163,25 +173,25 @@ figcaption { font-size: .8125rem; color: var(--muted); margin-top: var(--s1); }
 .list dd { margin: 0; color: var(--muted); }
 #rooms .list { margin-top: var(--s3); }
 #rooms .list div { grid-template-columns: 1fr; }
-@media (min-width: 640px) { #rooms .list div { grid-template-columns: 9rem minmax(0, 1fr); } }
+@media (min-width: 640px) { #rooms .list div { grid-template-columns: 9.5rem minmax(0, 1fr); } }
 #rooms .list dt { font: 450 1.125rem/1.4 var(--serif); }
-#rooms .list dd { color: var(--ink); }
+#rooms .list dd { color: var(--ink); text-wrap: balance; }
 .amenities { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--s3); }
 .amenities ul { list-style: none; padding: 0; margin: 0; }
 .amenities li { padding: 3px 0; }
-.times { display: grid; gap: var(--s4); max-width: 900px; margin: 0 auto; }
+.times { display: grid; gap: var(--s4); }
 @media (min-width: 760px) { .times { grid-template-columns: 1fr 1fr; gap: 64px; } }
 .times .label { margin-bottom: var(--s1); }
 
 /* before you book */
 .truths { display: grid; gap: var(--s3); margin: 0 0 var(--s4); }
-@media (min-width: 760px) { .truths { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; } }
-.truths h3 { font-size: 1.25rem; margin-bottom: 8px; }
+@media (min-width: 760px) { .truths { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--colgap); } }
+.truths h3 { margin-bottom: 8px; }
 .truths p { margin: 0; color: var(--muted); }
-.qa { max-width: 980px; margin: 0 auto; }
-@media (min-width: 760px) { .qa div { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); } }
+.qa { margin: 0; }
+@media (min-width: 760px) { .qa div { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); column-gap: var(--colgap); } }
 .qa dt { font: 450 1.125rem/1.4 var(--serif); }
-.qa dd { margin: 0; }
+.qa dd { margin: 0; max-width: 64ch; }
 
 /* guests' words */
 blockquote { margin: 0; }
@@ -197,15 +207,16 @@ blockquote.big p { font-size: clamp(1.75rem, 1.3rem + 1.4vw, 2.375rem); line-hei
 
 /* photos: equal three-across grid; the rest behind one control */
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-@media (min-width: 760px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px 24px; } }
+@media (min-width: 760px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3) var(--colgap); } }
 .grid img { width: 100%; aspect-ratio: 4/3; object-fit: cover; }
-.all { margin-top: var(--s4); }
-.all summary { display: block; width: max-content; margin: 0 auto var(--s4); cursor: pointer; list-style: none;
+.all { margin-top: var(--head); }
+.all summary { display: block; width: max-content; margin: 0 auto; cursor: pointer; list-style: none;
   border: 1px solid var(--ink); padding: 14px 26px; font: 600 .8125rem/1.2 var(--sans); letter-spacing: .12em; text-transform: uppercase; }
 .all summary::-webkit-details-marker { display: none; }
+.all[open] summary { margin-bottom: var(--head); }
 .all summary:hover { background: var(--ink); color: var(--stone); }
 /* folded lists: amenities, the rest of the questions */
-.more-list { max-width: 980px; margin: 0 auto; }
+.more-list { margin: 0; }
 .more-list summary { cursor: pointer; list-style: none; padding: 14px 0; border-bottom: 1px solid var(--rule);
   font: 600 .8125rem/1.2 var(--sans); letter-spacing: .12em; text-transform: uppercase; }
 .more-list summary::-webkit-details-marker { display: none; }
@@ -216,7 +227,7 @@ blockquote.big p { font-size: clamp(1.75rem, 1.3rem + 1.4vw, 2.375rem); line-hei
 .more-list > .qa { border-top: 0; }
 
 /* footer */
-.foot { background: var(--ink); color: #D9D6CF; font-size: .875rem; padding: var(--s4) var(--gutter) 104px; text-align: center; }
+.foot { background: var(--peacock-deep); color: var(--on-dark-muted); font-size: .875rem; padding: var(--s4) var(--gutter) 104px; text-align: center; }
 .foot p { max-width: var(--max); margin: 0 auto 6px; }
 .foot-name { font: 450 1.5rem var(--serif); color: #FFFFFF; margin-bottom: var(--s2) !important; }
 

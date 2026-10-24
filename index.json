@@ -34,7 +34,7 @@
   "airbnb_reviews_at": "23 October 2026"
  },
  "facts_checked": "26 September 2026",
- "built": "2026-10-24T02:03:45.306085+01:00",
+ "built": "2026-10-24T02:28:39.377380+01:00",
  "answers": [
   {
    "q": "What is provided?",
@@ -93,17 +93,17 @@
   {
    "room": "Bedroom 1",
    "beds": "King-size bed",
-   "notes": "Own en-suite wet room"
+   "notes": "En-suite wet room"
   },
   {
    "room": "Bedroom 2",
    "beds": "King-size bed",
-   "notes": "Shares the main bathroom"
+   "notes": ""
   },
   {
    "room": "Bedroom 3",
-   "beds": "Two single beds (can be joined on request)",
-   "notes": "Shares the main bathroom"
+   "beds": "Two single beds, joined on request",
+   "notes": ""
   },
   {
    "room": "Main bathroom",
