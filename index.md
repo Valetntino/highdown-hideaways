@@ -1,6 +1,6 @@
 # Elderflower Lodge (Highdown Hideaways), Ferring, West Sussex
 
-A private lodge for 6 with its own hot tub. Rated 5.0 from 331 reviews on Airbnb (Superhost and Guest favourite).
+A private lodge for 6 with its own hot tub. Rated 5.0 from 333 reviews on Airbnb (Superhost and Guest favourite).
 
 ## Key facts
 
@@ -13,21 +13,20 @@ A private lodge for 6 with its own hot tub. Rated 5.0 from 331 reviews on Airbnb
 ## How to book
 
 - Airbnb: https://www.airbnb.co.uk/rooms/49257209 (add ?check_in=YYYY-MM-DD&check_out=YYYY-MM-DD&adults=N&guests=N for dates; Airbnb shows the total price)
-- Direct with Luca and Trina: choose dates on the page for a total, then send the request by email (info@highdownhideaways.com) or phone or text 07940 796860. Nothing is paid until you have spoken and agreed the dates. £261 a night, £310 on Fridays and Saturdays. Three weeknights are £783; 4 nights or more are 5% less, a week or more 10% less. A dog is £150 a stay, and nothing else is added. Stays of 3 nights or more (2 for arrivals within 3 weeks); nights in the next 14 days are 5% less.
+- Direct with Luca and Trina: choose dates on the page for a total, then send the request by email (info@highdownhideaways.com) or phone or text 07940 796860. Nothing is paid until you have spoken and agreed the dates. £326 a night, £347 on Fridays and Saturdays. Three weeknights are £978; 10% off a week or more, 12% off 28 nights or more. A dog is £150 a stay, and nothing else is added. Stays of 3 nights or more (2 for arrivals within 3 weeks).
 
 ## Questions answered
 
 - **What is provided?** Bedding, towels, bathrobes, beach towels, toiletries, Wi-Fi, a full kitchen with coffee pods, and a welcome hamper with eggs from our hens and produce in season.
-- **Is there parking?** Yes, free: 2 cars at the lodge, with more space on the nursery.
+- **Is there parking?** Yes, free: 3 cars at the lodge, with more space on the nursery.
 - **Is there Wi-Fi and TV?** Fast Wi-Fi throughout. A 50-inch smart TV in the lounge (Netflix, Disney+, Prime Video) and a 40-inch smart TV in every bedroom.
 - **Is it step-free?** Inside is all on one level, with a large wet room and widened doorways. There are 2 steps to the front door; we put a ramp down on request.
-- **Is there air conditioning?** Not yet. Fans are provided for hot nights.
 - **How do we get there without a car?** Goring-by-Sea station is 1.5 miles away (about 30 minutes on foot); Angmering station is 1.9 miles.
 - **How many people does it sleep?** Up to 6, in two king-size bedrooms and a twin room. A travel cot and highchair are free on request.
 - **Is the hot tub private? Does it cost extra?** It is private to the lodge, under its own covered gazebo in your garden, and included in the price. You can use it in the rain.
 - **Check-in and check-out?** Check-in from 3pm, check-out by 10am. Self check-in with a lockbox. Ask us if you need other times.
 - **Can we bring a dog?** Yes. We accept one small, well-behaved dog.
-- **How far is the beach?** About 10 minutes by car, or about 40 minutes on foot (1.7 miles, mostly flat; the shorter footpath over the railway is closed until February 2027).
+- **How far is the beach?** About 10 minutes by car, or about 40 minutes on foot (1.7 miles, mostly flat).
 - **How do we book?** Choose dates and book on Airbnb, or book direct with us: ring or text 07940 796860, or email info@highdownhideaways.com.
 - **Parties or smoking?** No parties, events or smoking.
 
@@ -40,12 +39,6 @@ A private lodge for 6 with its own hot tub. Rated 5.0 from 331 reviews on Airbnb
 | Bedroom 3 | Two single beds, joined on request | - |
 | Main bathroom | Bath and rainfall shower | For bedrooms 2 and 3 |
 | Open-plan living | Kitchen, dining for 6 and lounge under skylights | Utility room with washer and dryer |
-
-## Good to know
-
-- On the edge of Ferring, easy to reach. Our lane leaves the main road, so Asda is a 10-minute walk for supplies. Once you're down the lane, guests tell us they barely notice the road.
-- Next door to our family nursery. By day you may see us at work in the greenhouses, and in summer we sell our own produce there. The lodge has its own private, fenced garden.
-- The beach by car or on foot. Ferring beach is about 10 minutes by car, or about a 40 minute walk (1.7 miles, mostly flat).
 
 ## Times from the lodge
 
@@ -73,6 +66,7 @@ Foschini Nursery, Hangleton Lane, Ferring, West Sussex BN12 6PP
 ## Contents
 
 - index.html: the full page with photos
+- area.md: walks, beaches and their dog rules, pubs, wet days (area.html)
 - index.json: these facts as exact records
 
-Facts checked 26 September 2026. Built 27 Oct 2026 02:22 GMT.
+Facts checked 26 September 2026. Built 28 Oct 2026 01:40 GMT.

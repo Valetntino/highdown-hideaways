@@ -24,7 +24,19 @@
     window.matchMedia('(min-width: 1280px)').addEventListener('change', function () { set(false); });
   }
   var hero = document.querySelector('.hero');
-  function stick() { top.classList.toggle('stuck', window.scrollY > (hero ? hero.offsetHeight - top.offsetHeight : 40)); }
+  // on a short screen (a phone on its side) the header slides away while the guest scrolls down and returns on the
+  // way up: with the booking bar both took 139 of 390 px there (user, 27 Oct: "the top and bottom bars basically
+  // take up most of the screen"). The same on any screen under 900 px tall (upright phones, laptops): K0293's aim is a
+  // header one move away, not one always covering the page. Taller screens keep it on screen.
+  var short = window.matchMedia('(max-height: 899px)'), lastY = window.scrollY;
+  function stick() {
+    var y = window.scrollY, stuck = y > (hero ? hero.offsetHeight - top.offsetHeight : 40);
+    top.classList.toggle('stuck', stuck);
+    if (Math.abs(y - lastY) > 8 || !stuck) {  // a few px of jitter from the browser's own bar is not a direction
+      top.classList.toggle('tuck', short.matches && stuck && y > lastY && !top.classList.contains('open'));
+      lastY = y;
+    }
+  }
   window.addEventListener('scroll', stick, { passive: true });
   window.addEventListener('resize', stick);
   stick();
@@ -165,17 +177,29 @@
   var cal = document.createElement('div'), back = document.createElement('div');
   cal.className = 'cal'; cal.hidden = true; cal.setAttribute('role', 'dialog'); cal.setAttribute('aria-label', 'Choose your dates');
   back.className = 'cal-back'; back.hidden = true;
-  cal.innerHTML = '<div class="cal-top"><p class="cal-say" aria-live="polite"></p><button type="button" class="cal-x">Close</button></div>' +
+  // Arrive and Leave as two tabs over the months, as the big booking sites lay them out (user, 27 Oct: "ours sucks")
+  cal.innerHTML = '<div class="cal-top"><p class="cal-say" aria-live="polite"></p><div class="cal-pick">' +
+    '<button type="button" data-k="0"><span>Arrive</span><b></b></button><button type="button" data-k="1"><span>Leave</span><b></b></button></div></div>' +
     '<div class="cal-nav"><button type="button" class="cal-prev" aria-label="Earlier month">&#8592;</button>' +
     '<button type="button" class="cal-next" aria-label="Later month">&#8594;</button></div>' +
     '<div class="cal-months"></div>' +
-    '<div class="cal-foot"><button type="button" class="cal-clear">Clear dates</button><p class="cal-rule"></p></div>';
+    '<p class="cal-rule"></p><div class="cal-foot"><button type="button" class="cal-clear">Clear dates</button><button type="button" class="cal-x">Close</button></div>';
   form.appendChild(cal); document.body.appendChild(back);
   var months = cal.querySelector('.cal-months'), say = cal.querySelector('.cal-say');
   var tel = document.querySelector('a[href^="tel:"]');
-  if (P) cal.querySelector('.cal-rule').textContent = 'Stays of ' + P.min_nights + ' nights or more, or 2 nights for arrivals in the next ' +
+  if (P) cal.querySelector('.cal-rule').textContent = P.min_nights + ' nights or more; 2 nights for arrivals within ' +
     Math.round(P.two_night_within_days / 7) + ' weeks. To arrive ' + (P.earliest_days_ahead === 2 ? 'today or tomorrow' : 'sooner') +
     ', ring us' + (tel ? ' on ' + tel.textContent.replace(/^\D+/, '').trim() : '') + '.';
+  // each night's price under its day, where the price quote shows (the same rule as the quote below): the night's
+  // Airbnb price from src/nights.json, or else the weekday or Friday-and-Saturday price for its month
+  var priced = !!(P && (P.show_everywhere || /^(localhost|127\.0\.0\.1)$/.test(location.hostname) || /\/highdown-preview\//.test(location.pathname)));
+  function rate(d) {
+    if (!priced) return 0;
+    if (N) { var x = N.nights[iso(d)]; return x && x.open ? Math.round(x.air * (1 - P.per_night.direct_off)) : 0; }
+    var we = d.getDay() === 5 || d.getDay() === 6;
+    return Math.round((we ? P.night.fri_sat : P.night.weekday) * (P.season[String(d.getMonth() + 1)] || 1));
+  }
+  var picks = [].slice.call(cal.querySelectorAll('.cal-pick button'));
 
   // why day d can't be chosen now ('past', 'short', 'booked'), or ''
   function why(d) {
@@ -192,7 +216,10 @@
         '<span aria-hidden="true">Mo</span><span aria-hidden="true">Tu</span><span aria-hidden="true">We</span><span aria-hidden="true">Th</span>' +
         '<span aria-hidden="true">Fr</span><span aria-hidden="true">Sa</span><span aria-hidden="true">Su</span>';
       for (var i = (first.getDay() + 6) % 7; i > 0; i--) html += '<span></span>';
-      for (var dd = 1; dd <= dim; dd++) html += '<button type="button" data-d="' + iso(new Date(first.getFullYear(), first.getMonth(), dd)) + '">' + dd + '</button>';
+      for (var dd = 1; dd <= dim; dd++) {
+        var dt = new Date(first.getFullYear(), first.getMonth(), dd), r = dt >= today ? rate(dt) : 0;
+        html += '<button type="button" data-d="' + iso(dt) + '"><b>' + dd + '</b>' + (r ? '<i>£' + r + '</i>' : '') + '</button>';
+      }
       html += '</div></div>';
     }
     months.innerHTML = html;
@@ -204,13 +231,19 @@
     var to = end || (picking === 'out' && start && hover && hover > start && !why(hover) ? hover : null), aim = target();
     months.querySelectorAll('button').forEach(function (b) {
       var d = day(b.dataset.d), no = why(d), s = !!(start && +d === +start), e = !!(to && +d === +to);
-      b.className = (no ? 'no ' + no : '') + (s ? ' s' : '') + (e ? ' e' : '') + (start && to && d > start && d < to ? ' in' : '') +
+      b.className = (no ? 'no ' + no : '') + (s ? ' s' + (to ? ' r' : '') : '') + (e ? ' e' : '') + (start && to && d > start && d < to ? ' in' : '') +
         (+d === +today ? ' now' : '');
       b.setAttribute('aria-disabled', no ? 'true' : 'false');
       b.setAttribute('aria-pressed', s || (e && end) ? 'true' : 'false');
       b.setAttribute('aria-label', fmt(d, LONG) + (s ? ', arrival' : e && end ? ', leaving' : '') +
         (no === 'booked' ? ', booked' : no === 'short' ? ', too short a stay' : no === 'soon' ? ', ring us to arrive this soon' : ''));
       b.tabIndex = +d === +aim ? 0 : -1;
+    });
+    picks.forEach(function (p, k) {
+      var v = k ? end : start;
+      p.querySelector('b').textContent = v ? fmt(v, SHORT) : 'Add date';
+      p.classList.toggle('on', (picking === 'out') === !!k);
+      p.setAttribute('aria-pressed', (picking === 'out') === !!k ? 'true' : 'false');
     });
     say.textContent = note || (start && end ? nights(start, end) + ' nights, ' + fmt(start, SHORT) + ' to ' + fmt(end, SHORT) :
       start ? 'Arriving ' + fmt(start, SHORT) + '. Now choose the day you leave.' : 'Choose the day you arrive.');
@@ -291,6 +324,8 @@
   cal.querySelector('.cal-prev').addEventListener('click', function () { view = month(view, -1); render(); });
   cal.querySelector('.cal-next').addEventListener('click', function () { view = month(view, 1); render(); });
   cal.querySelector('.cal-x').addEventListener('click', function () { close(true); });
+  // Arrive picks a new arrival; Leave, once there is an arrival, picks the leaving day again
+  picks.forEach(function (p, k) { p.addEventListener('click', function () { note = ''; picking = k && start ? 'out' : 'in'; paint(); }); });
   cal.querySelector('.cal-clear').addEventListener('click', function () { start = end = null; picking = 'in'; sync(); render(); });
   cal.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') { ev.stopPropagation(); close(true); } });
   // Tab out of the picker closes it, so focus never sits behind the phone's sheet (26 Oct audit); a redraw drops focus
@@ -313,12 +348,12 @@
   var ask = document.getElementById('ask'), ci = document.getElementById('ci'), co = document.getElementById('co'),
       ad = document.getElementById('ad'), box = document.getElementById('quote'), cfg = document.getElementById('pricing');
   var form = document.getElementById('book'), air = form ? form.getAttribute('action') : '';
-  if (!ask || !ci || !co || !ad) return;
+  if (!form || !ci || !co || !ad) return;
   var P = null, N = null, nt = document.getElementById('nights');
   try { P = JSON.parse(cfg.textContent); } catch (err) { P = null; }
   try { N = nt ? JSON.parse(nt.textContent) : null; } catch (err) { N = null; }
   var local = /^(localhost|127\.0\.0\.1)$/.test(location.hostname), preview = /\/highdown-preview\//.test(location.pathname);
-  var base = ask.getAttribute('href').split('?')[0], DAY = 864e5, tel = document.querySelector('a[href^="tel:"]'), sent = '';
+  var base = (ask ? ask.getAttribute('href') : form.getAttribute('data-mail')).split('?')[0], DAY = 864e5, tel = document.querySelector('a[href^="tel:"]'), sent = '';
   // Each night's Airbnb price from PriceLabs (src/nights.json); once its prices are older than stale_days the quote
   // hides rather than guess, since the flat settings no longer match Airbnb.
   var stale = !!(N && P && !(Date.now() - Date.parse(N.fetched) <= P.per_night.stale_days * DAY));
@@ -368,7 +403,8 @@
     }
     direct = base - late;
     for (var j = 0; j < P.long_stay.length; j++) if (n >= P.long_stay[j].from) { cut = P.long_stay[j]; direct *= 1 - cut.off; break; }
-    if (n >= 7) air *= 1 - P.airbnb.weekly_discount;
+    if (n >= 28 && P.airbnb.monthly_discount) air *= 1 - P.airbnb.monthly_discount;
+    else if (n >= 7) air *= 1 - P.airbnb.weekly_discount;
     var net = air * (1 - P.airbnb.host_fee * (1 + P.airbnb.vat_on_fee));
     var floor = (net + P.card_fee.fixed) / (1 - P.card_fee.rate);
     var stay = Math.round(Math.min(Math.max(direct, floor), air));
@@ -402,13 +438,12 @@
       '<p class="q-msg"></p>' +
       (show ? '<label class="q-dog"><input type="checkbox" id="dog"> Bringing your dog <span class="q-fee"></span></label>' : '') +
       '<p class="q-act"><a class="btn" id="req" href="#"></a><a class="q-air" href="#" target="_blank" rel="noopener">Or see these dates on Airbnb</a></p>' +
-      '<p class="q-alt">No email program? <button type="button" class="q-copy">Copy the request</button> and send it to ' +
-      '<a href="' + base + '">' + base.replace('mailto:', '') + '</a>' + (tel ? ', or ring <a href="' + tel.getAttribute('href') + '">' + tel.textContent.replace(/^\D+/, '').trim() + '</a>' : '') +
-      '. <span class="q-done" aria-live="polite"></span></p>' +
-      '<p class="q-terms">Nothing is paid until we’ve spoken and agreed your dates.' + (show && P.terms_confirmed ? ' Then ' +
+      // a mailto: alone does nothing on a computer with no mail program, so the address and a copy button stay
+      '<p class="q-alt"><a href="' + base + '">' + base.replace('mailto:', '') + '</a> <button type="button" class="q-copy">Copy the request</button>' +
+      ' <span class="q-done" aria-live="polite"></span></p>' +
+      '<p class="q-terms">Nothing to pay until we’ve agreed your dates.' + (show && P.terms_confirmed ? ' Then ' +
       Math.round(P.deposit_share * 100) + '% secures them and the rest is due ' + P.balance_days_before +
-      ' days before you arrive, with a ' + money(P.damage_deposit) + ' damage deposit we refund after your stay.' : '') +
-      ' We use your details only to arrange your stay and keep our accounts, and never pass them on.</p>';
+      ' days before you arrive, with a ' + money(P.damage_deposit) + ' damage deposit we refund after your stay.' : '') + '</p>';
     box.tabIndex = -1;
     ['q-line', 'q-total', 'q-what', 'q-how', 'q-msg', 'q-dog', 'q-fee', 'q-air'].forEach(function (c) { parts[c] = box.querySelector('.' + c); });
     parts.dog = box.querySelector('#dog'); parts.req = box.querySelector('#req');
@@ -434,7 +469,7 @@
     var lines = ['Hello Luca and Trina,', '', 'Please could you give us a direct price for Elderflower Lodge.', '',
       'Arrive: ' + words(ci.value), 'Leave: ' + words(co.value), 'Guests: ' + ad.value, '', 'Thank you,', ''];
     var asking = mail('Elderflower Lodge: a direct price', lines);
-    ask.setAttribute('href', asking);
+    if (ask) ask.setAttribute('href', asking);
     if (!box) return;
     box.hidden = !(ci.value && co.value);
     if (box.hidden) return;
@@ -449,7 +484,7 @@
       return;
     }
     parts['q-total'].textContent = money(q.total);
-    parts['q-what'].textContent = 'for ' + q.n + ' nights, booking direct with us' + (q.fee ? ', including your dog' : '') + '.';
+    parts['q-what'].textContent = 'for ' + q.n + ' nights' + (q.fee ? ', with your dog' : '');
     parts['q-how'].textContent = how(q); parts['q-how'].hidden = !parts['q-how'].textContent;
     parts['q-fee'].textContent = '(+' + money(P.dog_fee) + ')';
     parts.req.textContent = 'Request these dates';
@@ -566,8 +601,10 @@
     return t.replace(':', '.').replace(/\s/g, '').toLowerCase();
   }
   try {
-    var now = new Date(), set = sun(now, false), label = 'Sunset at the lodge', t = set;
-    if (now > set) { t = sun(new Date(now.getTime() + 864e5), true); label = 'Sunrise at the lodge'; }
+    // "today" and "tomorrow" say the time is live: the user took a bare 4.46pm for a fixed time (27 Oct; it was
+    // that day's sunset, 4.46pm in the sunrisesunset.io table for Worthing)
+    var now = new Date(), set = sun(now, false), label = 'Sunset at the lodge today', t = set;
+    if (now > set) { t = sun(new Date(now.getTime() + 864e5), true); label = 'Sunrise at the lodge tomorrow'; }
     box.querySelector('.sun-l').textContent = label;
     box.querySelector('.sun-t').textContent = fmt(t);
     box.hidden = false;
@@ -625,6 +662,16 @@
     if (h) td.scrollTo({ top: h.offsetTop - td.querySelector('.td-head').offsetHeight - 16 });
   }
   if (td) td.addEventListener('close', function () { if (back) back.focus(); });
+  // a tap before this script ran (a slow link: it runs at about 3.9 s on 1 Mbit) opened the list in place, and the
+  // move into the sheet above then left it open and empty (27 Oct probe): the guest asked for the photos, so show them
+  // But a tour tab tapped that early follows its link into the list, which opens it too: that guest asked for one area,
+  // so show its tab in place (the sheet covered the page and every later tab tap, guest walk landscape 1 Mbit, 27 Oct)
+  if (td && all.open) {
+    all.open = false;
+    var hid = location.hash.slice(1), hit = hid && document.getElementById(hid), ti = tabs.map(function (a) { return a.getAttribute('href'); }).indexOf('#' + hid);
+    if (ti >= 0) { pick(ti); tabs[ti].scrollIntoView({ block: 'center' }); }
+    else tour(hit && td.contains(hit) ? hid : null, all.querySelector('summary'));
+  }
   document.querySelectorAll('.tp-all').forEach(function (a) {
     a.addEventListener('click', function (ev) { ev.preventDefault(); tour(a.getAttribute('href').slice(1), a); });
   });
@@ -651,7 +698,9 @@
       var nx = list[(k + 1) % list.length], pv = list[(k - 1 + list.length) % list.length];
       // the 400 px copies either side first (about 30 KB each): a press then shows a photo at once even when the
       // page's released photos fill a slow link (Next took 3.2 s behind them, 26 Oct), and the full one follows
-      [nx, pv].forEach(function (x) { if (!held[x[0] + '-xs']) { var q = new Image(); q.fetchPriority = 'high'; q.src = 'img/' + x[0] + '-xs.webp'; held[x[0] + '-xs'] = q; } });
+      // once the guest has pressed, every step's small copy (11-15 here, about 0.4 MB): quick presses outran the
+      // one-ahead fetch on a slow link (27 Oct, the viewer's same fault: "you don't get not loaded")
+      (stepped ? [nx, pv].concat(list) : [nx, pv]).forEach(function (x) { if (!held[x[0] + '-xs']) { var q = new Image(); q.fetchPriority = 'high'; q.src = 'img/' + x[0] + '-xs.webp'; held[x[0] + '-xs'] = q; } });
       function one(x, then) {
         if (held[x[0]]) { if (then) then(); return; }
         // low: a press shows the 400 px copy at once anyway, and a photo on the screen comes before one a press away
@@ -678,8 +727,9 @@
       n.textContent = (k + 1) + ' / ' + list.length;
       pic.dataset.v = s;
       if (pic.getAttribute('role') === 'button') pic.setAttribute('aria-label', 'Open photo: ' + x[1]);
-      ahead();
+      stepped = true; ahead();
     }
+    var stepped = false;
     // the page's own first photo stays as written (rewriting it at load restarted its download)
     n.textContent = '1 / ' + list.length; pic.dataset.v = list[0][0];
     if ('IntersectionObserver' in window) {
@@ -714,56 +764,115 @@
     var s = slug(img); if (s && order.indexOf(s) < 0) order.push(s);
   });
   if (!order.length) return;
-  var caps = {}, sets = {}, dims = {};
+  var caps = {}, sets = {}, asets = {}, dims = {};
   [].slice.call((td || document).querySelectorAll('.grid figure')).forEach(function (f) {
     var im = f.querySelector('img'), s = slug(im), so = f.querySelector('source[type="image/webp"]');  // the full set, not the phones' AVIF
     caps[s] = (f.querySelector('figcaption') || {}).textContent || '';
     sets[s] = so ? so.getAttribute('srcset') || so.dataset.hold || '' : '';  // held until the hero arrives (HOLD_JS)
+    var av = f.querySelector('source[type="image/avif"]'), a = av ? av.getAttribute('srcset') || av.dataset.hold || '' : '';
+    asets[s] = a.indexOf('img/' + s + '-xs.avif') >= 0 ? a : '';  // the whole photo's AVIF twins, never a crop's
     dims[s] = [im.width || 4, im.height || 3];
   });
   var d = document.createElement('dialog'), i = 0, from = null;
   d.className = 'viewer';
   d.setAttribute('aria-label', 'Photo viewer');
-  d.innerHTML = '<figure><img alt=""><figcaption></figcaption></figure><p class="v-nav">' +
+  d.innerHTML = '<figure><picture><source type="image/avif"><img alt=""></picture><figcaption></figcaption></figure><p class="v-nav">' +
     '<button type="button" class="v-prev">Previous</button><span class="v-n" aria-live="polite"></span>' +
     '<button type="button" class="v-next">Next</button><button type="button" class="v-x">Close</button></p>';
   document.body.appendChild(d);
-  var img = d.querySelector('img'), cap = d.querySelector('figcaption'), n = d.querySelector('.v-n');
+  var img = d.querySelector('img'), av1 = d.querySelector('source'), cap = d.querySelector('figcaption'), n = d.querySelector('.v-n');
   img.draggable = false;  // as the steppers: a mouse swipe started a native image drag and never moved the photo (26 Oct audit)
   // Each photo shows at once from its 400 px copy (about 30 KB) and sharpens when the size the screen needs
   // arrives; the photos either side are fetched once this one is in. Before (26 Oct, slow 4G): a 320 KB JPEG
   // a step, 1.2-2.4 s blank, and a box 0 px tall while it came, so a step showed no photo at all.
+  var short = window.matchMedia('(max-height: 499px)');  // the bar and caption shrink there (style.css)
+  // A phone on its side: the photo takes the whole height and the controls and caption sit in the dark either side,
+  // SIDE px each. The band under the photo took 80 of 360 px, so a 4:3 photo filled 34% of the screen and an upright
+  // one 18% (user 27 Oct: "fills basically none of the screen"). 96 px holds the wider button, "Previous".
+  var side = window.matchMedia('(max-height: 499px) and (orientation: landscape)'), SIDE = 96;
   function fit(s) {
     var r = dims[s][0] / dims[s][1];
-    return Math.ceil(Math.min(innerWidth - 32, (innerHeight - 120) * r));
+    if (side.matches) return Math.ceil(Math.min(innerWidth - 2 * SIDE, innerHeight * r));
+    return Math.ceil(Math.min(innerWidth - 32, (innerHeight - (short.matches ? 80 : 120)) * r));
   }
+  // AVIF where the 1,400 px twin covers the screen: 20-24% fewer bytes a photo than webp at the same fidelity
+  // (tools/avif_v1.py), which on a 1 Mbit link is the gap between a sharp photo and a blurred one at each step
+  // (27 Oct probe: 10 of 32 sharp after 1.5 s a step). Larger screens keep webp up to 3,200 px.
+  var avif = null;  // unknown until a photo has shown: the browser's own pick between the two says it
+  function useAvif(s) { return !!asets[s] && avif !== false && fit(s) * (window.devicePixelRatio || 1) <= 1470; }
   function box(s) {  // the photo's own shape before it loads, so the small copy fills it
     var w = fit(s); img.style.width = w + 'px'; img.style.height = Math.round(w * dims[s][1] / dims[s][0]) + 'px';
+    d.style.setProperty('--pw', w + 'px');  // the caption's band beside the photo (style.css)
   }
   addEventListener('resize', function () { if (d.open) { box(order[i]); img.sizes = fit(order[i]) + 'px'; } });
   var held = {};
   function fetch1(s) {
     if (!s || held[s]) return;
-    var p = new Image(); p.sizes = fit(s) + 'px'; p.srcset = sets[s] || ''; if (!sets[s]) p.src = 'img/' + s + '.jpg'; held[s] = p;
+    var p = new Image(); p.sizes = fit(s) + 'px'; p.srcset = (avif && useAvif(s) ? asets[s] : sets[s]) || ''; if (!sets[s]) p.src = 'img/' + s + '.jpg'; held[s] = p;
   }
-  function show(k) {
+  function show(k, now) {
+    dir = k < i ? -1 : 1;
     i = (k + order.length) % order.length;
-    var s = order[i], at = i;
-    img.removeAttribute('srcset'); img.removeAttribute('src');  // never leave the last photo up under the new caption
+    var s = order[i], at = i, p = held[s];
+    img.removeAttribute('srcset'); av1.removeAttribute('srcset');  // never leave the last photo up under the new caption
     box(s);
-    img.style.backgroundImage = 'url(img/' + s + '-xs.webp)';
-    img.sizes = fit(s) + 'px';
-    if (sets[s]) img.srcset = sets[s]; else img.src = 'img/' + s + '.jpg';
+    // the small copy is the photo until the full one is asked for: an img with no address would draw its alt text
+    img.style.backgroundImage = 'url(img/' + s + '-xs.webp)'; img.src = 'img/' + s + '-xs.webp';
+    img.sizes = av1.sizes = fit(s) + 'px';
+    function sharp() {
+      if (at !== i) return;
+      want = s;
+      if (useAvif(s)) av1.srcset = asets[s];
+      if (sets[s]) img.srcset = sets[s]; else img.src = 'img/' + s + '.jpg';
+    }
+    clearTimeout(late); want = null;
+    if (now || (p && p.complete && p.naturalWidth)) sharp(); else late = setTimeout(sharp, LOOK_MS);
     img.alt = caps[s];
     cap.textContent = caps[s];
     n.textContent = (i + 1) + ' of ' + order.length;
+    img.onerror = function () { if (at === i) { want = null; pump(); } };
     img.onload = function () {
-      if (at !== i) return;
-      img.style.backgroundImage = '';
-      fetch1(order[(i + 1) % order.length]); fetch1(order[(i - 1 + order.length) % order.length]);
+      if (at !== i || /-xs\.webp$/.test(img.currentSrc)) return;
+      img.style.backgroundImage = ''; want = null;
+      if (av1.getAttribute('srcset')) avif = /\.avif(#|$)/.test(img.currentSrc);
+      pump();
     };
+    pump();
   }
-  function view(s, el) { from = el; show(order.indexOf(s)); d.showModal(); d.querySelector('.v-next').focus(); }
+  // Opening the viewer says the guest will flick through. Every small copy (about 32 KB) is fetched outward from the
+  // photo showing, 3 at a time so they land in the order they are reached, then every full copy the same way once the
+  // first full one has said AVIF or webp. A step's own full copy is asked for only after LOOK_MS on it (unless it is
+  // in already): above a flick (0.6 s), so flicking spends the link on small copies, not on 190 KB copies left behind.
+  // Before (user's phone, 27 Oct: "all should be loaded so when you are flicking through you don't get not loaded"):
+  // the two either side once the current one had loaded; flicking on 1 Mbit showed 3-7 of 32 steps (guest walk).
+  // While the full copy of the photo the guest stopped on is coming, only small copies are fetched beside it: on a
+  // 1 Mbit link it shared the link with 3 full copies and no photo looked at for 1.5 s came in sharp.
+  var busy = 0, late = null, LOOK_MS = 700, dir = 1, want = null;
+  // the nearest photo whose copy has not been asked for, two the way the guest is going for each one behind: either
+  // way alike gave the photos behind half a 1 Mbit link and flicking on showed 22-25 of 32 steps
+  function near(tag) {
+    function at(j) { var s = order[(j % order.length + order.length) % order.length]; return held[s + tag] ? null : s; }
+    for (var k = 1; k <= order.length; k++) {
+      var s = at(i + dir * (2 * k - 1)) || at(i + dir * 2 * k) || at(i - dir * k);
+      if (s) return s;
+    }
+    return null;
+  }
+  function pump() {
+    while (busy < 3 && d.open) {
+      var s = near('-xs'), q;
+      if (s) { q = held[s + '-xs'] = new Image(); q.src = 'img/' + s + '-xs.webp'; }
+      else if (avif !== null && !want && (s = near(''))) { fetch1(s); q = held[s]; }
+      else return;
+      busy++; q.onload = q.onerror = function () { busy--; pump(); };
+    }
+  }
+  function view(s, el) {
+    from = el; show(order.indexOf(s), true); d.showModal(); d.querySelector('.v-next').focus();
+    // on a touch phone on its side, also hide the browser's own bars where the browser allows it (Android Chrome;
+    // iPhone Safari has no fullscreen for a page element): its address bar takes a further 56 px or so of height
+    if (side.matches && matchMedia('(pointer: coarse)').matches && d.requestFullscreen) d.requestFullscreen({ navigationUI: 'hide' }).catch(function () {});
+  }
   // every photo of the lodge that is in the full list opens here: the hero is left alone
   [].slice.call(document.querySelectorAll('main figure img, .bed-ph img, .tour-show img, .tdlg img')).forEach(function (im) {
     var s = slug(im); if (!s || order.indexOf(s) < 0 || im.closest('.hero')) return;
@@ -796,7 +905,11 @@
     if (x0 !== null && Math.abs(ev.clientX - x0) > 50) { swiped = true; show(i + (ev.clientX < x0 ? 1 : -1)); }
     x0 = null;
   });
-  d.addEventListener('close', function () { img.removeAttribute('srcset'); img.removeAttribute('src'); if (from) from.focus(); });
+  d.addEventListener('close', function () {
+    img.removeAttribute('srcset'); img.removeAttribute('src');
+    if (document.fullscreenElement === d) document.exitFullscreen().catch(function () {});
+    if (from) from.focus();
+  });
 })();
 
 // A photo whose download fails (a phone dropping signal mid-scroll) is asked for again, up to 3 times, instead of
@@ -811,7 +924,7 @@
     setTimeout(function () {
       var p = im.parentNode, again = '#r' + (n + 1);
       // a changed address makes the browser fetch it again; the part after # is never sent
-      if (p && p.tagName === 'PICTURE') [].forEach.call(p.querySelectorAll('source'), function (so) {
+      if (p && p.tagName === 'PICTURE') [].forEach.call(p.querySelectorAll('source[srcset]'), function (so) {
         so.srcset = so.getAttribute('srcset').replace(/(\.\w+)(#r\d)?(\s)/g, '$1' + again + '$3');
       });
       if (im.getAttribute('srcset')) im.srcset = im.getAttribute('srcset').replace(/(\.\w+)(#r\d)?(\s)/g, '$1' + again + '$3');
@@ -876,16 +989,294 @@
   };
   document.head.appendChild(s);
 })();
-// The map keeps its labels readable by scrolling sideways on a phone, which nothing said (26 Oct audit): name it, and
-// let the keyboard scroll it too.
+// The location map (27 Oct 2026; user: "the graphic that has the dots where everything is needs to be massively
+// improved"). img/map.svg is drawn from OpenStreetMap by src/map.py and put inline when it nears the screen, so each
+// walk and drive is an element. On foot / By car moves the view between the two sets of places; pointing at or tapping
+// a row or a dot lights that route and draws it out from the lodge. Reduced motion: the view jumps, nothing draws.
 (function () {
-  var w = document.querySelector('.map-wrap'); if (!w) return;
-  var hint = document.createElement('p'); hint.className = 'map-hint'; hint.textContent = 'Swipe the map sideways to see all of it.';
-  w.parentNode.insertBefore(hint, w.nextSibling);
-  function fit() {
-    var over = w.scrollWidth > w.clientWidth + 1; hint.hidden = !over;
-    if (over) { w.tabIndex = 0; w.setAttribute('role', 'region'); w.setAttribute('aria-label', 'Map, scrolls sideways'); }
-    else { w.removeAttribute('tabindex'); w.removeAttribute('role'); w.removeAttribute('aria-label'); }
+  var box = document.querySelector('.mapbox'), times = document.querySelector('.times');
+  if (!box || !times || !window.fetch) return;
+  var D = JSON.parse(box.getAttribute('data-map')), L = D.lodge, MILE = 160.934;  // map units are 10 m
+  var still = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var svg = null, vb = null, mode = 'walk', lit = null, held = null, raf = 0, shown = false;
+  var lists = times.querySelectorAll('.tl'), rows = times.querySelectorAll('.tl li');
+  times.classList.add('live');
+
+  var sw = document.createElement('div');
+  sw.className = 'map-mode'; sw.setAttribute('role', 'group'); sw.setAttribute('aria-label', 'Times and routes');
+  sw.innerHTML = '<button type="button" data-m="walk">On foot</button><button type="button" data-m="drive">By car</button>';
+  var layer = document.createElement('div'); layer.className = 'pins'; layer.setAttribute('aria-hidden', 'true');
+  var scale = document.createElement('div'); scale.className = 'map-scale'; scale.setAttribute('aria-hidden', 'true');
+  scale.innerHTML = '<i></i><span></span>';
+  box.appendChild(layer); box.appendChild(scale); box.appendChild(sw);
+
+  // each dot's label carries its time in this mode (user's brother, 27 Oct: "time for each one")
+  function pin(cls, text, x, y, i, t) {
+    var p = document.createElement('span');
+    p.className = 'pin ' + cls; p.innerHTML = '<i></i><b></b><em><s>&#8594;</s></em>';
+    p.lastChild.appendChild(document.createTextNode(text));
+    if (t) { var sm = document.createElement('small'); sm.textContent = t; p.lastChild.appendChild(sm); }
+    p._x = x; p._y = y; p._i = i; p._side = cls; p._name = text;
+    layer.appendChild(p); return p;
   }
-  fit(); window.addEventListener('resize', fit);
+  var lodge = pin('lodge s-l', 'Elderflower Lodge', L[0], L[1], null);
+  var pins = D.places.map(function (p) {
+    var el = pin('s-' + p.side, p.name, p.to[0], p.to[1], p.i, p.t); el._mode = p.mode; el._p = p;
+    el._far = Math.hypot(p.to[0] - L[0], p.to[1] - L[1]) > 1000;  // Chichester, Goodwood, Brighton, Gatwick: off the by-car view
+    return el;
+  });
+
+  // a chosen place opens a card on the map: both times, the route's length and a directions link
+  var card = document.createElement('div'); card.className = 'map-card'; card.hidden = true; card.setAttribute('aria-live', 'polite');
+  box.appendChild(card);
+  function fill(i) {
+    var pn = pins.filter(function (q) { return q._i === i; })[0];
+    if (i === null || !pn) { card.hidden = true; return; }
+    var p = pn._p, m = p.mode === 'walk' ? 'walking' : 'driving';
+    var go = 'https://www.google.com/maps/dir/?api=1&origin=' + D.ll.join(',') + '&destination=' + p.ll.join(',') + '&travelmode=' + m;
+    var t = (p.w ? '<span><b>' + p.w + '</b> on foot</span>' : '') + (p.d ? '<span><b>' + p.d + '</b> by car</span>' : '');
+    card.innerHTML = '<button type="button" class="mc-x" aria-label="Close">&#215;</button><h3><span class="mc-f">' + p.full.replace(/</g, '&lt;') + '</span><span class="mc-s">' + p.name.replace(/</g, '&lt;') + '</span></h3>' +
+      '<p class="mc-t">' + t + '</p><p class="mc-d">' + p.mi + (p.mi === 1 ? ' mile ' : ' miles ') + (p.mode === 'walk' ? 'on foot' : 'by road') +
+      ', the way drawn on the map</p><a href="' + go + '" target="_blank" rel="noopener">Directions<span class="mc-f"> from the lodge</span></a>';
+    card.hidden = false;
+    // the card never covers its own place: a place that would sit under it sends the card to the top
+    card.classList.remove('up');
+    var r = pn.getBoundingClientRect(), c = card.getBoundingClientRect();
+    card.classList.toggle('up', r.top > c.top - 16 && r.left < c.right + 16);
+  }
+  card.addEventListener('click', function (ev) { if (ev.target.closest('.mc-x')) hold(held); });
+
+  // each row becomes a button that lights its route
+  rows.forEach(function (li) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'tr'; b.setAttribute('aria-pressed', 'false');
+    while (li.firstChild) b.appendChild(li.firstChild);
+    li.appendChild(b);
+  });
+
+  // how far each dot's label reaches, in screen pixels: [left, right, up, down]
+  function reach(p) {
+    var w = p.lastChild.offsetWidth || p._w || p.lastChild.textContent.length * 7.5;
+    p._w = w;
+    var side = p === lodge ? 'l' : p._side.slice(-1);
+    return side === 'r' ? [8, 13 + w, 10, 10] : side === 'l' ? [(p === lodge ? 17 : 13) + w, 10, 12, 12]
+      : side === 't' ? [w / 2, w / 2, 27, 8] : [w / 2, w / 2, 8, 27];
+  }
+  // the smallest view that holds the lodge and this mode's near places with every label whole, clear of the switch
+  // (top) and the scale (bottom); one map unit is 10 m
+  function target(m) {
+    return fit([lodge].concat(pins.filter(function (p) { return p._mode === m && !p._far; })), m === 'walk' ? 0.45 : 1.6);
+  }
+  function fit(ps, s) {
+    var W = box.clientWidth, H = box.clientHeight, pad = 10, top = 60, bot = 28, rs = ps.map(reach);
+    for (var k = 0; k < 60; k++, s *= 1.08) {
+      var lo = -1e9, hi = 1e9, tlo = -1e9, thi = 1e9;
+      ps.forEach(function (p, j) {
+        var r = rs[j];
+        hi = Math.min(hi, p._x - (r[0] + pad) * s); lo = Math.max(lo, p._x + (r[1] + pad) * s - W * s);
+        thi = Math.min(thi, p._y - (r[2] + top) * s); tlo = Math.max(tlo, p._y + (r[3] + bot) * s - H * s);
+      });
+      if (lo <= hi && tlo <= thi) return [(lo + hi) / 2, (tlo + thi) / 2, W * s, H * s];
+    }
+    return [L[0] - W * s / 2, L[1] - H * s / 2, W * s, H * s];
+  }
+
+  function place(v) {
+    var W = box.clientWidth, s = v[2] / W, H = box.clientHeight;
+    svg.setAttribute('viewBox', v.map(function (n) { return n.toFixed(2); }).join(' '));
+    svg.style.setProperty('--u', s + 'px');
+    svg.style.setProperty('--fs', (W < 600 ? 11 : 12) * s + 'px');
+    var lx = (L[0] - v[0]) / s, ly = (L[1] - v[1]) / s;
+    lodge.style.transform = 'translate(' + lx + 'px,' + ly + 'px)';
+    var taken = [];  // boxes of the labels in view, so an edge chip never lands on one
+    var on = pins.filter(function (p) { return !p.hidden; });
+    on.forEach(function (p) {
+      p._sx = (p._x - v[0]) / s; p._sy = (p._y - v[1]) / s;
+      p._out = p._sx < 0 || p._sx > W || p._sy < 0 || p._sy > H;
+      p.classList.toggle('edge', p._out);
+      if (!p._out) { var r = reach(p); taken.push([p._sx - r[0], p._sy - r[2], p._sx + r[1], p._sy + r[3]]); }
+    });
+    var lr = reach(lodge); taken.push([lx - lr[0], ly - lr[2], lx + lr[1], ly + lr[3]]);
+    taken.push([0, 0, 190, 58]);  // the switch
+    on.forEach(function (p) {
+      var x = p._sx, y = p._sy;
+      if (p._out) {  // a chip on the edge, on the line from the lodge, pointing the way; slid along the edge if it would hide a label
+        var dx = x - lx, dy = y - ly, cw = (p._w || 80) + 34, ch = 30, ix = cw / 2 + 6, it = 62 + ch / 2, ib = ch / 2 + 26, k = 1;
+        if (dx) k = Math.min(k, ((dx > 0 ? W - ix : ix) - lx) / dx);
+        if (dy) k = Math.min(k, ((dy > 0 ? H - ib : it) - ly) / dy);
+        x = lx + dx * k; y = ly + dy * k;
+        var side = Math.abs(x - ix) < 1 || Math.abs(x - (W - ix)) < 1, bx = x, by = y;
+        for (var n = 0; n < 12; n++) {
+          var d = (n % 2 ? 1 : -1) * Math.ceil(n / 2) * 34;
+          x = side ? bx : Math.max(ix, Math.min(W - ix, bx + d)); y = side ? Math.max(it, Math.min(H - ib, by + d)) : by;
+          var me = [x - cw / 2, y - ch / 2, x + cw / 2, y + ch / 2];
+          if (!taken.some(function (t) { return me[0] < t[2] && me[2] > t[0] && me[1] < t[3] && me[3] > t[1]; })) break;
+        }
+        taken.push([x - cw / 2, y - ch / 2, x + cw / 2, y + ch / 2]);
+        p.querySelector('s').style.transform = 'rotate(' + Math.atan2(p._sy - y, p._sx - x) + 'rad)';
+      }
+      p.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+    });
+    box._taken = taken;
+    // scale bar: the longest round distance that fits in 110 px
+    var ppm = MILE / s, d = [0.25, 0.5, 1, 2, 5, 10].filter(function (n) { return n * ppm <= 110; }).pop() || 0.25;
+    scale.firstChild.style.width = Math.round(d * ppm) + 'px';
+    scale.lastChild.textContent = (d === 0.25 ? '¼ mile' : d === 0.5 ? '½ mile' : d + (d === 1 ? ' mile' : ' miles'));
+    vb = v;
+  }
+
+  // the map's own place names give way to the dots' labels and chips, and a name the dots already carry shows once
+  function declutter() {
+    if (!svg) return;
+    var r0 = box.getBoundingClientRect(), W = r0.width, H = r0.height, kept = (box._taken || []).slice(), names = {};
+    pins.forEach(function (p) { if (!p.hidden) names[p._name.toLowerCase()] = 1; });
+    var rank = function (el) { var c = el.getAttribute('class') || ''; return /r3/.test(c) ? 0 : /area/.test(c) ? 1 : /r2/.test(c) ? 2 : /r1/.test(c) ? 3 : 4; };
+    var ts = [];
+    svg.querySelectorAll('.labels text').forEach(function (el) { var b = el.getBoundingClientRect(); if (b.width) ts.push([el, b, rank(el)]); });
+    ts.sort(function (a, b) { return a[2] - b[2]; });
+    // most important first; a name is kept only whole, inside the frame and clear of every label already kept
+    var out = ts.map(function (t) {
+      var x0 = t[1].left - r0.left - 3, y0 = t[1].top - r0.top - 2, x1 = x0 + t[1].width + 6, y1 = y0 + t[1].height + 4;
+      var hide = !!names[t[0].textContent.toLowerCase()] || x0 < 0 || y0 < 0 || x1 > W || y1 > H
+        || kept.some(function (q) { return x0 < q[2] && x1 > q[0] && y0 < q[3] && y1 > q[1]; });
+      if (!hide) kept.push([x0, y0, x1, y1]);
+      return hide;
+    });
+    ts.forEach(function (t, j) { t[0].classList.toggle('hide', out[j]); });
+  }
+
+  function look(m) {
+    svg.classList.toggle('v-walk', m === 'walk'); svg.classList.toggle('v-drive', m === 'drive');
+    pins.forEach(function (p) { p.hidden = p._mode !== m; });
+  }
+
+  function route(i) { return svg && svg.querySelector('.rt[data-r="' + i + '"]'); }
+  function draw(el, delay) {
+    if (!el) return;
+    el.style.transition = 'none'; el.style.strokeDasharray = '1 1'; el.style.strokeDashoffset = still.matches ? '0' : '1';
+    if (still.matches) return;
+    el.getBoundingClientRect();
+    el.style.transition = 'stroke-dashoffset 1.1s cubic-bezier(.45,0,.2,1) ' + delay + 'ms';
+    el.style.strokeDashoffset = '0';
+  }
+  function drawAll() {
+    var n = 0;
+    pins.forEach(function (p) {
+      if (p._mode !== mode) return;
+      var d = n++ * 70; draw(route(p._i), d);
+      p.style.transitionDelay = still.matches ? '0ms' : d + 500 + 'ms';
+    });
+    layer.classList.remove('in'); layer.getBoundingClientRect(); layer.classList.add('in');
+  }
+
+  function show(i) {
+    if (lit === i) return;
+    lit = i;
+    if (svg) svg.querySelectorAll('.rt').forEach(function (r) {
+      var me = +r.getAttribute('data-r') === i;
+      r.classList.toggle('on', me); r.classList.toggle('dim', i !== null && !me);
+      if (me) { r.parentNode.appendChild(r); draw(r, 0); }
+    });
+    pins.forEach(function (p) { p.classList.toggle('on', p._i === i); p.style.transitionDelay = '0ms'; });
+    rows.forEach(function (li) { li.classList.toggle('on', +li.getAttribute('data-r') === i); });
+    box.classList.toggle('hl', i !== null);
+  }
+  // a far place (Chichester, Brighton, Goodwood, Gatwick) is off the by-car view: choosing it zooms out to show the
+  // whole way there, and letting it go zooms back
+  var wide = false;
+  function hold(i) {
+    held = held === i ? null : i;
+    var far = pins.filter(function (p) { return p._i === held && p._far; })[0];
+    if (svg && (far || wide)) {
+      wide = !!far;
+      go(far ? fit([lodge, far].concat(pins.filter(function (p) { return p._mode === mode && !p._far; })), 1.6) : target(mode), 900, declutter);
+    }
+    rows.forEach(function (li) { li.firstChild.setAttribute('aria-pressed', +li.getAttribute('data-r') === held ? 'true' : 'false'); });
+    show(held); fill(held);
+  }
+  rows.forEach(function (li) {
+    var i = +li.getAttribute('data-r'), b = li.firstChild;
+    b.addEventListener('mouseenter', function () { show(i); });
+    b.addEventListener('mouseleave', function () { show(held); });
+    b.addEventListener('focus', function () { show(i); });
+    b.addEventListener('blur', function () { show(held); });
+    b.addEventListener('click', function () {
+      hold(i);
+      var r = box.getBoundingClientRect(), seen = Math.min(r.bottom, innerHeight) - Math.max(r.top, 0);
+      if (seen < r.height * 0.6) box.scrollIntoView({ block: 'nearest', behavior: still.matches ? 'auto' : 'smooth' });
+    });
+  });
+  pins.forEach(function (p) {
+    p.addEventListener('pointerenter', function (ev) { if (ev.pointerType === 'mouse') show(p._i); });
+    p.addEventListener('pointerleave', function (ev) { if (ev.pointerType === 'mouse') show(held); });
+    p.addEventListener('click', function () { hold(p._i); });
+  });
+
+  function go(to, ms, done) {
+    cancelAnimationFrame(raf);
+    var from = vb, t0 = performance.now();
+    if (!from || ms === 0 || still.matches) { place(to); if (done) done(); return; }
+    (function step(now) {
+      var t = Math.min(1, (now - t0) / ms), k = t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      place(from.map(function (a, j) { return a + (to[j] - a) * k; }));
+      if (t < 1) raf = requestAnimationFrame(step); else if (done) done();
+    })(t0);
+  }
+
+  function setMode(m) {
+    mode = m; held = null; wide = false; show(null); fill(null);
+    sw.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-m') === m ? 'true' : 'false'); });
+    lists.forEach(function (l) { l.classList.toggle('show', l.getAttribute('data-m') === m); });
+    if (!svg) return;
+    layer.classList.remove('in');
+    // zooming in shows the streets first; zooming out keeps them until the view has left
+    var to = target(m), from = vb;
+    if (m === 'walk') { look(m); place(to); declutter(); if (from) place(from); }
+    go(to, 1000, function () { look(m); place(vb); declutter(); drawAll(); });
+  }
+  sw.addEventListener('click', function (ev) { var b = ev.target.closest('button'); if (b) setMode(b.getAttribute('data-m')); });
+  setMode('walk');
+
+  function load() {
+    // a request Chrome parks on a dropped connection waits 10 s before it retries (measured 27 Oct, 6 of 6 page loads in
+    // one 15-minute spell); past 15 s (that wait plus 92 KB at 1 Mbit, with room) the plain picture takes its place
+    var ac = window.AbortController ? new AbortController() : null, cut = ac && setTimeout(function () { ac.abort(); }, 15000);
+    fetch(box.getAttribute('data-src'), ac ? { signal: ac.signal } : {}).then(function (r) { clearTimeout(cut); if (!r.ok) throw r.status; return r.text(); }).then(function (t) {
+      box.insertAdjacentHTML('afterbegin', t.slice(t.indexOf('<svg')));
+      svg = box.querySelector('svg.map');
+      svg.removeAttribute('style');
+      pins.forEach(reach);  // measure every label while all are shown
+      look(mode); place(target(mode)); declutter();
+      svg.querySelectorAll('.rt').forEach(function (r) { r.setAttribute('pathLength', '1'); r.style.strokeDasharray = '1 1'; r.style.strokeDashoffset = '1'; });
+      box.classList.add('ready');
+      if (lit !== null) { var was = lit; lit = undefined; show(was); }  // a row chosen before the map arrived
+      new IntersectionObserver(function (es, o) {
+        if (es[0].isIntersecting) { o.disconnect(); shown = true; drawAll(); }
+      }, { threshold: 0.35 }).observe(box);
+    }).catch(function () {
+      box.insertAdjacentHTML('afterbegin', '<img src="' + box.getAttribute('data-src') + '" alt="">');
+      sw.hidden = true; layer.hidden = true; scale.hidden = true;
+      lists.forEach(function (l) { l.classList.add('show'); });
+    });
+  }
+  new IntersectionObserver(function (es, o) { if (es[0].isIntersecting) { o.disconnect(); load(); } }, { rootMargin: '900px 0px' }).observe(box);
+  if (window.ResizeObserver) new ResizeObserver(function () { if (svg) { cancelAnimationFrame(raf); place(wide ? vb : target(mode)); declutter(); } }).observe(box);
+})();
+// Reviews: guests' words grouped by why they came, one group at a time behind chips (27 Oct 2026 redesign);
+// without the script every group shows under its own heading.
+(function () {
+  var wrap = document.querySelector('.themes'); if (!wrap) return;
+  var groups = wrap.querySelectorAll('.theme'), bar = document.createElement('div');
+  bar.className = 'chips'; bar.setAttribute('role', 'group'); bar.setAttribute('aria-label', 'Guests who came as');
+  groups.forEach(function (g, i) {
+    var b = document.createElement('button'); b.type = 'button'; b.textContent = g.querySelector('h3').textContent;
+    b.setAttribute('aria-controls', g.id);
+    b.addEventListener('click', function () { pick(i); });
+    bar.appendChild(b);
+  });
+  wrap.parentNode.insertBefore(bar, wrap); wrap.classList.add('live');
+  function pick(i) {
+    groups.forEach(function (g, j) { g.hidden = j !== i; });
+    bar.querySelectorAll('button').forEach(function (b, j) { b.setAttribute('aria-pressed', j === i ? 'true' : 'false'); });
+  }
+  pick(0);
 })();
