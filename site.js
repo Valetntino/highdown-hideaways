@@ -29,11 +29,21 @@
   // take up most of the screen"). The same on any screen under 900 px tall (upright phones, laptops): K0293's aim is a
   // header one move away, not one always covering the page. Taller screens keep it on screen.
   var short = window.matchMedia('(max-height: 899px)'), lastY = window.scrollY;
+  var heroWords = hero ? [].slice.call(hero.querySelectorAll('.hero-text, .sun')) : [], topH = 0;
   function stick() {
-    var y = window.scrollY, stuck = y > (hero ? hero.offsetHeight - top.offsetHeight : 40);
+    // solid once the hero's words reach the header, not when the photo ends: until then the see-through header sat
+    // on the title and the sunset line ran into Book (30 Oct 2026)
+    // the solid header is shorter, so its live height would flip the class back at the boundary: use the tallest seen
+    topH = Math.max(topH, top.offsetHeight);
+    var y = window.scrollY, past = hero ? hero.offsetHeight - topH : 40, at = past;
+    heroWords.forEach(function (el) {
+      if (!el.hidden) at = Math.min(at, el.getBoundingClientRect().top + y - topH - 8);
+    });
+    var stuck = y > at;
     top.classList.toggle('stuck', stuck);
-    if (Math.abs(y - lastY) > 8 || !stuck) {  // a few px of jitter from the browser's own bar is not a direction
-      top.classList.toggle('tuck', short.matches && stuck && y > lastY && !top.classList.contains('open'));
+    // it slides away only past the hero: tied to the solid point, phones lost the header (and Menu) on the first flick
+    if (Math.abs(y - lastY) > 8 || y <= past) {  // a few px of jitter from the browser's own bar is not a direction
+      top.classList.toggle('tuck', short.matches && y > past && y > lastY && !top.classList.contains('open'));
       lastY = y;
     }
   }
@@ -169,12 +179,15 @@ if (window.fetch) fetch('nights.json', { cache: 'no-cache' }).then(function (r) 
   function booked(d) { var x = N && N.nights[iso(d)]; return !!(x && !x.open) || !!B[iso(d)]; }
   function fits(a, b) {
     if (nights(a, b) < least(a)) return 'short';
+    if (nights(a, b) > MAXN) return 'long';
     for (var x = a; x < b; x = add(x, 1)) if (booked(x)) return 'booked';
     return '';
   }
 
   var start = ci.value ? day(ci.value) : null, end = co.value ? day(co.value) : null;
   var picking = 'in', hover = null, view = month(today), last = month(today, 24);
+  // the owner's rules as on Airbnb (STATE.md): stays up to 31 nights, bookable up to 24 months ahead to the day
+  var MAXN = 31, far = new Date(today.getFullYear() + 2, today.getMonth(), today.getDate());
 
   // the shown date becomes the button that opens the calendar; the native input is left only to hold the value
   var trig = [ci, co].map(function (el, k) {
@@ -225,12 +238,18 @@ if (window.fetch) fetch('nights.json', { cache: 'no-cache' }).then(function (r) 
   }
   var picks = [].slice.call(cal.querySelectorAll('.cal-pick button'));
 
-  // why day d can't be chosen now ('past', 'short', 'booked'), or ''
+  // why day d can't be chosen now ('past', 'far', 'soon', 'short', 'long', 'booked', 'gap'), or ''
   function why(d) {
     if (d < today) return 'past';
+    if (d > far) return 'far';
+    if (picking === 'out' && start && +d === +start && !end) return '';  // a second tap on the arrival clears it
     if (picking === 'in' && P && d < add(today, P.earliest_days_ahead)) return 'soon';  // the quote would only say to ring
-    if (picking === 'out' && start && d > start) return fits(start, d);
-    return booked(d) ? 'booked' : '';
+    if (picking === 'out' && start && d > start) { var f = fits(start, d); return f === 'short' && booked(d) ? 'booked' : f; }
+    if (booked(d)) return 'booked';
+    // an arrival needs its minimum stay free after it: 12 Nov with 13 Nov booked could be picked, and then every
+    // leaving day was refused (user's phone, 30 Oct 2026)
+    if (picking === 'in' || !start || d < start) return add(d, least(d)) > far ? 'far' : fits(d, add(d, least(d))) ? 'gap' : '';
+    return '';
   }
   function render() {
     var html = '', count = wide.matches ? 2 : 1;
@@ -260,7 +279,8 @@ if (window.fetch) fetch('nights.json', { cache: 'no-cache' }).then(function (r) 
       b.setAttribute('aria-disabled', no ? 'true' : 'false');
       b.setAttribute('aria-pressed', s || (e && end) ? 'true' : 'false');
       b.setAttribute('aria-label', fmt(d, LONG) + (s ? ', arrival' : e && end ? ', leaving' : '') +
-        (no === 'booked' ? ', booked' : no === 'short' ? ', too short a stay' : no === 'soon' ? ', ring us to arrive this soon' : ''));
+        (no === 'booked' ? ', booked' : no === 'short' ? ', too short a stay' : no === 'long' ? ', over 31 nights' :
+         no === 'far' ? ', too far ahead to book' : no === 'soon' ? ', ring us to arrive this soon' : ''));
       b.tabIndex = +d === +aim ? 0 : -1;
     });
     picks.forEach(function (p, k) {
@@ -288,10 +308,13 @@ if (window.fetch) fetch('nights.json', { cache: 'no-cache' }).then(function (r) 
     if (no) {
       note = no === 'short' ? 'Too short: stays from ' + fmt(start, SHORT) + ' are ' + least(start) + ' nights or more.' :
         no === 'booked' ? (picking === 'out' ? 'A night in that stay is already booked.' : 'That night is already booked.') :
+        no === 'long' ? 'Stays are up to ' + MAXN + ' nights; for longer, please ask us.' :
+        no === 'far' ? 'We take bookings up to ' + fmt(far, LONG) + '.' :
         no === 'soon' ? 'To arrive this soon, please ring us' + (tel ? ' on ' + tel.textContent.replace(/^\D+/, '').trim() : '') + '.' : '';
       paint(); return;
     }
     note = '';
+    if (picking === 'out' && start && +d === +start && !end) { start = null; picking = 'in'; hover = null; sync(); paint(); return; }  // second tap clears
     if (picking === 'out' && start && d > start) end = d;
     else { start = d; end = null; }  // a new arrival starts a new stay: keeping the old leaving day closed the picker unasked (26 Oct audit)
     picking = end ? 'in' : 'out'; hover = null;
