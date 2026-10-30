@@ -34,7 +34,7 @@ body { margin: 0; background: var(--ground); color: var(--ink); font: 400 var(--
   -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; font-variant-numeric: lining-nums; }
 /* prices, dates and counts in the sans: Cormorant's figures and its hairline pound sign read unclearly on phones
    even as lining figures (user, 30 Oct 2026: "the pound sign and numbers ... not clear enough") */
-.price b, .q-line, .js .when .shown, .gsel, .bb-f span { font-family: var(--sans) !important; font-variant-numeric: lining-nums tabular-nums; letter-spacing: 0; }
+.price b, .q-line, .js .when .shown, .gsel, .bb-f span { font-family: var(--sans) !important; font-variant-numeric: lining-nums tabular-nums !important; letter-spacing: 0; }
 img { display: block; width: 100%; height: auto; }
 picture { display: block; }
 figure { margin: 0; }
