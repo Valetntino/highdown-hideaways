@@ -82,7 +82,10 @@
       });
       if (window.matchMedia('(max-width: 699px)').matches && ci.value) {
         f[0].firstChild.textContent = 'Dates';
-        f[0].lastChild.textContent = shown(0).textContent.trim().replace(/^\w+\s/, '') + (co.value ? ' to ' + shown(1).textContent.trim().replace(/^\w+\s/, '') : '');
+        // "19–29 Nov", or "28 Nov – 3 Dec": "19 Nov to 29 Nov" was cut off on a phone (user's screenshot, 30 Oct)
+        var d0 = new Date(ci.value + 'T12:00'), d1 = co.value ? new Date(co.value + 'T12:00') : null;
+        var dm = function (d) { return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); };
+        f[0].lastChild.textContent = !d1 ? dm(d0) : d0.getMonth() === d1.getMonth() ? d0.getDate() + '–' + dm(d1) : dm(d0) + ' – ' + dm(d1);
         f[0].setAttribute('aria-label', 'Dates: ' + f[0].lastChild.textContent);
       } else f[0].firstChild.textContent = 'Arrive';
       go.textContent = ci.value && co.value ? 'See your price' : 'Check dates';
@@ -387,7 +390,9 @@ if (window.fetch) fetch('nights.json', { cache: 'no-cache' }).then(function (r) 
   try { P = JSON.parse(cfg.textContent); } catch (err) { P = null; }
   try { N = nt ? JSON.parse(nt.textContent) : null; } catch (err) { N = null; }
   var local = /^(localhost|127\.0\.0\.1)$/.test(location.hostname), preview = /\/highdown-preview\//.test(location.pathname);
-  var base = (ask ? ask.getAttribute('href') : form.getAttribute('data-mail')).split('?')[0], DAY = 864e5, tel = document.querySelector('a[href^="tel:"]'), sent = '';
+  var base = (ask ? ask.getAttribute('href') : form.getAttribute('data-mail')).split('?')[0], DAY = 864e5, sent = '';
+  var wa = form.getAttribute('data-wa'), phone = form.getAttribute('data-phone') || '', ring = form.getAttribute('data-ring') || '';
+  var tel = document.querySelector('a[href^="tel:"]');
   // Each night's Airbnb price from PriceLabs (src/nights.json); once its prices are older than stale_days the quote
   // hides rather than guess, since the flat settings no longer match Airbnb.
   function stale() { return !!(N && P && !(Date.now() - Date.parse(N.fetched) <= P.per_night.stale_days * DAY)); }
@@ -395,7 +400,7 @@ if (window.fetch) fetch('nights.json', { cache: 'no-cache' }).then(function (r) 
   function day(v) { var p = v.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
   function iso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function words(v) {
-    return v ? day(v).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'not chosen yet';
+    return v ? day(v).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).replace(',', '') : 'not chosen yet';
   }
   function short(d) { return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
   function money(x) { return '£' + Math.round(x).toLocaleString('en-GB'); }
@@ -411,10 +416,9 @@ if (window.fetch) fetch('nights.json', { cache: 'no-cache' }).then(function (r) 
     var today = (function (p) { return new Date(+p[0], +p[1] - 1, +p[2]); })(
       new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()).split('-'));
     var lead = Math.round((a - today) / DAY);
-    if (lead < P.earliest_days_ahead) {
-      var tel = document.querySelector('a[href^="tel:"]');
-      return { msg: 'For arrivals in the next ' + P.earliest_days_ahead + ' days, please ring us' + (tel ? ' on ' + tel.textContent.replace(/^\D+/, '').trim() : '') + '.' };
-    }
+    if (lead < P.earliest_days_ahead)
+      return { msg: 'For arrivals in the next ' + P.earliest_days_ahead + ' days, please WhatsApp us' + (phone ? ' on ' + phone : '') +
+        (ring ? ', or ring ' + ring : '') + '.' };
     if (n < P.min_nights && !(n === 2 && lead <= P.two_night_within_days))
       return { msg: n === 1 ? 'We take stays of 2 nights or more.' :
         '2-night stays open up for arrivals within ' + Math.round(P.two_night_within_days / 7) + ' weeks; otherwise it’s ' + P.min_nights + ' nights or more.' };
@@ -448,24 +452,37 @@ if (window.fetch) fetch('nights.json', { cache: 'no-cache' }).then(function (r) 
     return { n: n, stay: stay, fee: fee, total: stay + fee, from: a, to: b, base: base, nl: nl, late: late > 0, cut: cut, direct: direct };
   }
 
-  // the nights under the total, then any cut in words, so the figures add up to the total (Grok price-display return,
-  // 25 Oct 2026: show each night, never a rounded average a night, which would not multiply back to the total)
+  // the nights under the total as a short bill, each row's pounds in data-v, so the rows add up to the total (Grok
+  // price-display return, 25 Oct 2026: show each night, never a rounded average a night). A run-on sentence of
+  // "1 at £323, 1 at £340 ..." was unreadable on a phone (user, 30 Oct), so a long stay shows its range on one row and
+  // each night behind "Night by night".
   function how(q) {
-    var t, off = q.base - q.stay, why = [];
-    if (off < 0) return '';  // the floor lifted the stay above its nights: no line rather than one that does not add up
-    if (q.n <= 4) t = q.nl.map(function (x) { return x[0].toLocaleDateString('en-GB', { weekday: 'long' }) + ' ' + money(x[1]); }).join(', ');
+    var off = q.base - q.stay, why = [], rows = [];
+    if (off < 0) return '';  // the floor lifted the stay above its nights: no bill rather than one that does not add up
+    function row(label, v, cls) {
+      return '<tr' + (cls ? ' class="' + cls + '"' : '') + (v === null ? '' : ' data-v="' + v + '"') + '><th scope="row">' + label +
+        '</th><td>' + (v !== null && v < 0 ? '−' + money(-v) : money(v === null ? q.total : v)) + '</td></tr>';
+    }
+    function nightName(d, long) { return d.toLocaleDateString('en-GB', { weekday: long ? 'long' : 'short', day: 'numeric', month: 'short' }); }
+    if (q.n <= 4) q.nl.forEach(function (x) { rows.push(row(nightName(x[0], true), x[1])); });
     else {
-      var c = {}, k = [];
-      q.nl.forEach(function (x) { if (!c[x[1]]) { c[x[1]] = 0; k.push(x[1]); } c[x[1]]++; });
-      t = k.map(function (p, i) { return c[p] + (i ? '' : (c[p] > 1 ? ' nights' : ' night')) + ' at ' + money(p); }).join(', ');
+      var lo = Math.min.apply(null, q.nl.map(function (x) { return x[1]; })), hi = Math.max.apply(null, q.nl.map(function (x) { return x[1]; }));
+      rows.push(row(q.n + ' nights, ' + (lo === hi ? money(lo) + ' each' : money(lo) + ' to ' + money(hi) + ' a night'), q.base));
     }
     // the percentages are named only when they make the whole cut; when our floor or the Airbnb price set the stay
     // instead, a named 20% beside a smaller sum does not add up (26 Oct audit)
-    if (Math.round(q.base - q.direct) !== off) why.push('our price for booking direct');
-    else if (q.late) why.push('nights in the next ' + P.last_minute.within_days + ' days are ' + Math.round(P.last_minute.off * 100) + '% less');
-    if (q.cut && why[0] !== 'our price for booking direct') why.push('stays of ' + q.cut.from + ' nights or more are ' + Math.round(q.cut.off * 100) + '% less');
-    return t + '.' + (off > 0 ? ' Less ' + money(off) + (why.length ? ': ' + why.join(', and ') : '') + '.' : '') +
-      (q.fee ? ' Your dog ' + money(q.fee) + '.' : '');
+    if (Math.round(q.base - q.direct) !== off) why.push('Our price for booking direct');
+    else {
+      if (q.late) why.push(Math.round(P.last_minute.off * 100) + '% off nights in the next ' + P.last_minute.within_days + ' days');
+      if (q.cut) why.push(Math.round(q.cut.off * 100) + '% off stays of ' + q.cut.from + ' nights or more');
+    }
+    if (off > 0) rows.push(row(why.join(', and ') || 'Less', -off));
+    if (q.fee) rows.push(row('Your dog', q.fee));
+    rows.push(row('Total', null, 'q-tot'));
+    var list = q.n <= 4 ? '' : '<details class="q-nights"><summary>Night by night</summary><ul>' + q.nl.map(function (x) {
+      return '<li><span>' + nightName(x[0]) + '</span><span>' + money(x[1]) + '</span></li>';
+    }).join('') + '</ul></details>';
+    return '<table class="q-sum"><caption class="vh">How the total is made</caption><tbody>' + rows.join('') + '</tbody></table>' + list;
   }
 
   // the cancellation scale from pricing.json cancel_keep (research/terms-v1/GRADES.md), shown before anyone pays
@@ -483,20 +500,28 @@ if (window.fetch) fetch('nights.json', { cache: 'no-cache' }).then(function (r) 
 
   var parts = {};
   if (box) {
-    box.innerHTML = '<p class="q-line"><b class="q-total"></b> <span class="q-what"></span></p><p class="q-how"></p>' +
-      '<p class="q-msg"></p>' +
+    // three ways to ask, not email alone (user, 30 Oct 2026): WhatsApp and email open a message with the dates filled
+    // in; the phone only in the hours the owners take calls
+    box.innerHTML = '<div class="q-price"><p class="q-line"><b class="q-total"></b> <span class="q-what"></span></p>' +
       (show ? '<label class="q-dog"><input type="checkbox" id="dog"> Bringing your dog <span class="q-fee"></span></label>' : '') +
-      '<p class="q-act"><a class="btn" id="req" href="#"></a><a class="q-air" href="#" target="_blank" rel="noopener">Or see these dates on Airbnb</a></p>' +
+      '<div class="q-how"></div><p class="q-msg"></p></div>' +
+      '<div class="q-req"><h3 class="q-req-h"></h3><p class="q-act">' +
+      (wa ? '<a class="btn" id="req-wa" href="#" target="_blank" rel="noopener">Send on WhatsApp</a>' : '') +
+      '<a class="btn ' + (wa ? 'q-second' : '') + '" id="req" href="#">Send by email</a></p>' +
+      '<p class="q-note">Each opens a message with your dates filled in.' +
+      (phone && tel ? ' Or <a href="' + tel.getAttribute('href') + '">ring ' + phone + '</a>' + (ring ? ', ' + ring : '') + '.' : '') + '</p>' +
       // a mailto: alone does nothing on a computer with no mail program, so the address and a copy button stay
-      '<p class="q-alt"><a href="' + base + '">' + base.replace('mailto:', '') + '</a> <button type="button" class="q-copy">Copy the request</button>' +
+      '<p class="q-alt">No email app? Write to <a href="' + base + '">' + base.replace('mailto:', '') + '</a> <button type="button" class="q-copy">Copy the request</button>' +
       ' <span class="q-done" aria-live="polite"></span></p>' +
+      '<p class="q-air-p"><a class="q-air" href="#" target="_blank" rel="noopener">Or see these dates on Airbnb</a></p></div>' +
       '<p class="q-terms">' + (P.reply_hours ? 'We reply within ' + P.reply_hours + ' hours. ' : '') + 'Nothing to pay until we’ve agreed your dates.' +
       (show && P.terms_confirmed ? ' Then ' + Math.round(P.deposit_share * 100) + '% secures them and the rest is due ' + P.balance_days_before +
       ' days before you arrive (all of it if you arrive sooner), with a ' + money(P.damage_deposit) +
       ' damage deposit we refund within 7 days of your stay.</p>' + cancelTerms() : '</p>');
     box.tabIndex = -1;
     ['q-line', 'q-total', 'q-what', 'q-how', 'q-msg', 'q-dog', 'q-fee', 'q-air'].forEach(function (c) { parts[c] = box.querySelector('.' + c); });
-    parts.dog = box.querySelector('#dog'); parts.req = box.querySelector('#req');
+    parts.dog = box.querySelector('#dog'); parts.req = box.querySelector('#req'); parts.wa = box.querySelector('#req-wa');
+    parts.head = box.querySelector('.q-req-h');
     box.querySelector('.q-copy').addEventListener('click', function () {
       var done = box.querySelector('.q-done'), ok = function () { done.textContent = 'Copied.'; };
       // the clipboard API needs a secure page; elsewhere fall back to a selected text box
@@ -514,11 +539,18 @@ if (window.fetch) fetch('nights.json', { cache: 'no-cache' }).then(function (r) 
     sent = 'To: ' + base.replace('mailto:', '') + '\nSubject: ' + subject + '\n\n' + lines.join('\n');
     return base + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(lines.join('\n'));
   }
+  function whatsapp(text) { return 'https://wa.me/' + wa + '?text=' + encodeURIComponent(text); }
+  function party(dog) { var g = +ad.value; return g + (g > 1 ? ' guests' : ' guest') + (dog ? ' and our dog' : ''); }
+  // The drafted messages read as a guest would write them, not as a form (user, 30 Oct 2026: "it should have a better
+  // feeling"): a greeting, the stay in a sentence, the dates set out to check, one question, and the guest's name to add.
   function update() {
     var dog = !!(parts.dog && parts.dog.checked);
-    var lines = ['Hello Luca and Trina,', '', 'Please could you give us a direct price for Elderflower Lodge.', '',
-      'Arrive: ' + words(ci.value), 'Leave: ' + words(co.value), 'Guests: ' + ad.value, '', 'Thank you,', ''];
-    var asking = mail('Elderflower Lodge: a direct price', lines);
+    var lines = ['Hello Luca and Trina,', '', 'We’re thinking of staying at Elderflower Lodge and would love a price for booking with you direct.', '',
+      'Arriving: ' + words(ci.value), 'Leaving: ' + words(co.value), 'Guests: ' + party(dog), '',
+      'Are these dates free?', '', 'Many thanks,', '[your name]', ''];
+    var asking = mail('Elderflower Lodge: a price for our dates', lines);
+    var askingWa = 'Hello Luca and Trina! We’d love a price for Elderflower Lodge, arriving ' + words(ci.value) + ' and leaving ' +
+      words(co.value) + ', ' + party(dog) + '. Are these dates free?';
     if (ask) ask.setAttribute('href', asking);
     if (!box) return;
     box.hidden = !(ci.value && co.value);
@@ -528,21 +560,26 @@ if (window.fetch) fetch('nights.json', { cache: 'no-cache' }).then(function (r) 
     parts['q-line'].hidden = parts['q-how'].hidden = !priced; parts['q-msg'].hidden = priced;
     if (parts['q-dog']) parts['q-dog'].hidden = !priced;
     if (!priced) {
-      parts['q-msg'].textContent = q && q.msg ? q.msg : 'Ask us for a price for these dates and we’ll reply by email' + (P.reply_hours ? ' within ' + P.reply_hours + ' hours.' : '.');
-      parts.req.textContent = 'Ask us about these dates';
+      parts['q-msg'].textContent = q && q.msg ? q.msg : 'Ask us for a price for these dates' + (P.reply_hours ? ' and we’ll reply within ' + P.reply_hours + ' hours.' : '.');
+      parts.head.textContent = 'Ask us about these dates';
       parts.req.setAttribute('href', asking);
+      if (parts.wa) parts.wa.setAttribute('href', whatsapp(askingWa));
       return;
     }
     parts['q-total'].textContent = money(q.total);
     parts['q-what'].textContent = 'for ' + q.n + ' nights' + (q.fee ? ', with your dog' : '');
-    parts['q-how'].textContent = how(q); parts['q-how'].hidden = !parts['q-how'].textContent;
+    parts['q-how'].innerHTML = how(q); parts['q-how'].hidden = !parts['q-how'].innerHTML;
     parts['q-fee'].textContent = '(+' + money(P.dog_fee) + ')';
-    parts.req.textContent = 'Request these dates';
-    parts.req.setAttribute('href', mail('Elderflower Lodge: request for ' + short(q.from) + ' to ' + short(q.to), [
-      'Hello Luca and Trina,', '', 'We’d like to stay at Elderflower Lodge, booking direct.', '',
-      'Arrive: ' + words(ci.value), 'Leave: ' + words(co.value), 'Nights: ' + q.n, 'Guests: ' + ad.value,
-      'Dog: ' + (dog ? 'yes, one small dog' : 'no'), 'Price shown on your website: ' + money(q.total) + ' in total', '',
-      'Name:', 'Phone:', '', 'Thank you,', '']));
+    parts.head.textContent = 'Request these dates';
+    parts.req.setAttribute('href', mail('Booking request: Elderflower Lodge, ' + short(q.from) + ' to ' + short(q.to), [
+      'Hello Luca and Trina,', '', 'We’d love to stay at Elderflower Lodge and book with you direct.', '',
+      'Arriving: ' + words(ci.value), 'Leaving: ' + words(co.value), 'That’s ' + q.n + ' nights for ' + party(dog) + '.',
+      'Your website showed ' + money(q.total) + ' for the stay.', '',
+      'Are these dates free?', '',
+      'Many thanks,', '[your name]', '[your phone number]', '']));
+    if (parts.wa) parts.wa.setAttribute('href', whatsapp('Hello Luca and Trina! We’d love to stay at Elderflower Lodge, arriving ' +
+      words(ci.value) + ' and leaving ' + words(co.value) + ': ' + q.n + ' nights for ' + party(dog) + '. Your website showed ' +
+      money(q.total) + ' for the stay. Are these dates free?'));
   }
   [ci, co, ad].forEach(function (el) { el.addEventListener('change', update); el.addEventListener('input', update); });
   if (parts.dog) parts.dog.addEventListener('change', update);

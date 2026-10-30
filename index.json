@@ -25,6 +25,8 @@
   "parking": "3 cars at the lodge, more on the nursery",
   "phone": "07940 796860",
   "tel": "+447940796860",
+  "whatsapp": "447940796860",
+  "ring_hours": "9am to 5pm, Friday to Monday",
   "email": "info@highdownhideaways.com",
   "address": "Foschini Nursery, Hangleton Lane, Ferring, West Sussex BN12 6PP",
   "postcode": "BN12 6PP",
@@ -36,7 +38,7 @@
   "airbnb_reviews_at": "27 October 2026"
  },
  "facts_checked": "26 September 2026",
- "built": "2026-10-30T00:50:37.903041+00:00",
+ "built": "2026-10-30T02:12:19.916916+00:00",
  "answers": [
   {
    "q": "What is provided?",
@@ -80,7 +82,7 @@
   },
   {
    "q": "How do we book?",
-   "a": "Choose dates and book on Airbnb, or book direct with us: ring or text 07940 796860, or email info@highdownhideaways.com."
+   "a": "Choose dates and book on Airbnb, or book direct with us: WhatsApp or text 07940 796860 any time, ring it 9am to 5pm, Friday to Monday, or email info@highdownhideaways.com."
   },
   {
    "q": "Parties or smoking?",
