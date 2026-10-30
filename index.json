@@ -18,11 +18,12 @@
   "_travel": "Google Maps, 25-26 Oct 2026: walks as Google gives them, except Highdown Hill 16 min (Google lacks the footpath up Hangleton Lane; Sussex Express walk); drives as a range from the night figure to a Saturday 11:00 departure, rounded to 5 above 20 min",
   "_beach": "Google Maps, 25 Oct 2026 23:35 GMT: walk 38 min (1.7 miles, mostly flat) to Ferring Beach, 39 to the Bluebird Cafe; drive 9 and 10 min at night (K0289)",
   "airbnb_rating": "5.0",
-  "airbnb_reviews": 333,
+  "airbnb_reviews": "330+",
+  "airbnb_reviews_read": 334,
   "airbnb_badges": "Superhost and Guest favourite",
   "one_level": "yes",
   "front_steps": 2,
-  "parking": "3 cars at the lodge, more on the nursery",
+  "parking": "Up to 5 cars: 3 at the lodge, 2 more on the nursery",
   "phone": "07940 796860",
   "tel": "+447940796860",
   "whatsapp": "447940796860",
@@ -35,10 +36,10 @@
   "airbnb_url": "https://www.airbnb.co.uk/rooms/49257209",
   "facebook": "https://www.facebook.com/highdownhideaways",
   "instagram": "https://www.instagram.com/highdownhideaways",
-  "airbnb_reviews_at": "27 October 2026"
+  "airbnb_reviews_at": "30 October 2026"
  },
  "facts_checked": "26 September 2026",
- "built": "2026-10-30T03:28:10.992060+00:00",
+ "built": "2026-10-30T07:27:59.122820+00:00",
  "answers": [
   {
    "q": "What is provided?",
@@ -46,7 +47,7 @@
   },
   {
    "q": "Is there parking?",
-   "a": "Yes, free: 3 cars at the lodge, with more space on the nursery."
+   "a": "Yes: up to 5 cars, 3 at the lodge and 2 more on the nursery."
   },
   {
    "q": "Is there Wi-Fi and TV?",
